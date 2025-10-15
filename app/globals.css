@@ -123,4 +123,92 @@
   body {
     @apply bg-background text-foreground;
   }
+  
+  /* Enhanced responsive typography */
+  h1 {
+    @apply text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-bold leading-tight;
+  }
+  
+  h2 {
+    @apply text-2xl sm:text-3xl lg:text-4xl font-bold leading-tight;
+  }
+  
+  h3 {
+    @apply text-lg sm:text-xl lg:text-2xl font-semibold leading-tight;
+  }
+  
+  p {
+    @apply text-sm sm:text-base leading-relaxed;
+  }
+}
+
+@layer utilities {
+  /* Custom responsive container */
+  .container-responsive {
+    @apply mx-auto max-w-7xl px-4 sm:px-6 lg:px-8;
+  }
+  
+  /* Responsive padding utilities */
+  .padding-responsive {
+    @apply px-4 sm:px-6 lg:px-8;
+  }
+  
+  .padding-y-responsive {
+    @apply py-8 sm:py-12 lg:py-16;
+  }
+  
+  /* Mobile-first grid utilities */
+  .grid-responsive {
+    @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6;
+  }
+  
+  .grid-responsive-large {
+    @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8;
+  }
+  
+  /* Responsive text utilities */
+  .text-responsive-hero {
+    @apply text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold leading-tight;
+  }
+  
+  .text-responsive-title {
+    @apply text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold leading-tight;
+  }
+  
+  .text-responsive-subtitle {
+    @apply text-base sm:text-lg md:text-xl leading-relaxed;
+  }
+  
+  /* Mobile menu utilities */
+  .mobile-menu-overlay {
+    @apply fixed inset-0 z-50 bg-background/80 backdrop-blur-sm;
+  }
+  
+  .mobile-menu-content {
+    @apply fixed inset-y-0 right-0 z-50 h-full w-3/4 max-w-sm border-l bg-background p-6 shadow-lg;
+  }
+  
+  /* Enhanced focus states for accessibility */
+  .focus-enhanced {
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2;
+  }
+  
+  /* Responsive aspect ratios */
+  .aspect-responsive-square {
+    @apply aspect-square;
+  }
+  
+  .aspect-responsive-video {
+    @apply aspect-video sm:aspect-[4/3] lg:aspect-video;
+  }
+  
+  /* Hide scrollbar utility */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
 }

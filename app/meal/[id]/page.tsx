@@ -29,7 +29,7 @@ export default function MealDetailsPage() {
 
   return (
     <main className="min-h-screen py-12">
-      <div className="container max-w-5xl">
+      <div className="container max-w-7xl mx-auto">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
