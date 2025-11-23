@@ -1,16 +1,19 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useParams } from "next/navigation"
+import { useParams, useRouter } from "next/navigation"
 import Image from "next/image"
 import { motion } from "framer-motion"
-import { Clock, ChefHat } from "lucide-react"
+import { Clock, ChefHat, LogIn } from "lucide-react"
 import { fetchRecipeById, type RecipeDetail } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { AddToMealPlanDialog } from "@/components/add-to-meal-plan-dialog"
+import { useAuth } from "@/contexts/auth-context"
 
 export default function RecipeDetailPage() {
   const params = useParams()
+  const router = useRouter()
+  const { user, loading: authLoading } = useAuth()
   const [recipe, setRecipe] = useState<RecipeDetail | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -80,11 +83,22 @@ export default function RecipeDetailPage() {
               </span>
             </div>
             <h1 className="text-4xl md:text-5xl font-bold text-balance mb-4">{recipe.title}</h1>
-            <AddToMealPlanDialog recipe={recipe}>
-              <Button size="lg" className="rounded-full">
-                Add to Meal Plan
+            {user ? (
+              <AddToMealPlanDialog recipe={recipe}>
+                <Button size="lg" className="rounded-full">
+                  Add to Meal Plan
+                </Button>
+              </AddToMealPlanDialog>
+            ) : (
+              <Button 
+                size="lg" 
+                className="rounded-full"
+                onClick={() => router.push("/login")}
+              >
+                <LogIn className="mr-2 h-4 w-4" />
+                Sign In to Add to Meal Plan
               </Button>
-            </AddToMealPlanDialog>
+            )}
           </div>
 
           {/* Ingredients */}

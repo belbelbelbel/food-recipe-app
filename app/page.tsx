@@ -1,41 +1,124 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import { motion } from "framer-motion"
-import { fetchRecipes, type Recipe } from "@/lib/api"
+import { fetchRecipes, searchRecipes, fetchRecipesByCategory, fetchCategories, type Recipe } from "@/lib/api"
 import { RecipeCard } from "@/components/recipe-card"
 import { LoadingCard } from "@/components/loading-card"
 import { SearchBar } from "@/components/search-bar"
 import { FilterBar } from "@/components/filter-bar"
+import { useDebounce } from "@/hooks/use-debounce"
 
 export default function HomePage() {
   const [recipes, setRecipes] = useState<Recipe[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
   const [activeCategory, setActiveCategory] = useState("All")
+  const [categories, setCategories] = useState<string[]>(["All"])
+  const [searchLoading, setSearchLoading] = useState(false)
 
+  // Debounce search query to avoid too many API calls
+  const debouncedSearchQuery = useDebounce(searchQuery, 500)
+
+  // Load initial recipes and categories
   useEffect(() => {
-    async function loadRecipes() {
+    async function loadInitialData() {
       try {
         setLoading(true)
-        const data = await fetchRecipes()
-        setRecipes(data)
+        const [recipesData, categoriesData] = await Promise.all([
+          fetchRecipes(),
+          fetchCategories(),
+        ])
+        setRecipes(recipesData)
+        setCategories(["All", ...categoriesData])
       } catch (error) {
         console.error("Failed to load recipes:", error)
-        // Error is handled by API fallback, but we could show a toast here if needed
       } finally {
         setLoading(false)
       }
     }
-    loadRecipes()
+    loadInitialData()
   }, [])
 
-  const categories = ["All", ...Array.from(new Set(recipes.map((r) => r.category)))]
+  // Search recipes when search query changes
+  useEffect(() => {
+    async function performSearch() {
+      if (!debouncedSearchQuery.trim()) {
+        // If search is empty, load default recipes
+        if (activeCategory === "All") {
+          try {
+            setSearchLoading(true)
+            const data = await fetchRecipes()
+            setRecipes(data)
+          } catch (error) {
+            console.error("Failed to load recipes:", error)
+          } finally {
+            setSearchLoading(false)
+          }
+        }
+        return
+      }
 
+      try {
+        setSearchLoading(true)
+        const searchResults = await searchRecipes(debouncedSearchQuery)
+        setRecipes(searchResults)
+      } catch (error) {
+        console.error("Failed to search recipes:", error)
+      } finally {
+        setSearchLoading(false)
+      }
+    }
+
+    performSearch()
+  }, [debouncedSearchQuery, activeCategory])
+
+  // Filter by category
+  useEffect(() => {
+    async function loadCategoryRecipes() {
+      if (activeCategory === "All") {
+        // If "All" is selected and no search query, load default recipes
+        if (!searchQuery.trim()) {
+          try {
+            setLoading(true)
+            const data = await fetchRecipes()
+            setRecipes(data)
+          } catch (error) {
+            console.error("Failed to load recipes:", error)
+          } finally {
+            setLoading(false)
+          }
+        }
+        return
+      }
+
+      // Don't filter by category if there's a search query
+      if (searchQuery.trim()) {
+        return
+      }
+
+      try {
+        setLoading(true)
+        const categoryRecipes = await fetchRecipesByCategory(activeCategory)
+        setRecipes(categoryRecipes)
+      } catch (error) {
+        console.error("Failed to load category recipes:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadCategoryRecipes()
+  }, [activeCategory, searchQuery])
+
+  // Filter recipes locally (for category filter when search is active)
   const filteredRecipes = recipes.filter((recipe) => {
-    const matchesSearch = recipe.title.toLowerCase().includes(searchQuery.toLowerCase())
-    const matchesCategory = activeCategory === "All" || recipe.category === activeCategory
-    return matchesSearch && matchesCategory
+    // If searching, don't filter by category (API handles it)
+    if (searchQuery.trim()) {
+      return true
+    }
+    // If category filter is active, filter locally
+    return activeCategory === "All" || recipe.category === activeCategory
   })
 
   return (
@@ -93,7 +176,7 @@ export default function HomePage() {
             </p>
           </motion.div>
 
-          {loading ? (
+          {(loading || searchLoading) ? (
             <div className="grid-responsive">
               {Array.from({ length: 8 }).map((_, i) => (
                 <LoadingCard key={i} />

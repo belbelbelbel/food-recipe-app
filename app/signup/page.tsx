@@ -1,12 +1,13 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { motion } from "framer-motion"
 import { Eye, EyeOff, Loader2, ChefHat, Check } from "lucide-react"
 import { signUp } from "@/lib/firebase/auth"
 import { handleError, showSuccess } from "@/lib/error-handler"
+import { useAuth } from "@/contexts/auth-context"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -14,6 +15,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 
 export default function SignUpPage() {
   const router = useRouter()
+  const { user, loading: authLoading } = useAuth()
   const [formData, setFormData] = useState({
     displayName: "",
     email: "",
@@ -25,6 +27,13 @@ export default function SignUpPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [passwordStrength, setPasswordStrength] = useState(0)
+
+  // Redirect if already signed in
+  useEffect(() => {
+    if (!authLoading && user) {
+      router.push("/meal-plans")
+    }
+  }, [user, authLoading, router])
 
   const checkPasswordStrength = (password: string) => {
     let strength = 0
@@ -78,12 +87,33 @@ export default function SignUpPage() {
     }
 
     setLoading(true)
+    setError(null)
 
     try {
       await signUp(formData.email.trim(), formData.password, formData.displayName.trim() || undefined)
+      
+      // Wait a moment for auth state to update
+      await new Promise(resolve => setTimeout(resolve, 500))
+      
       showSuccess("Account created successfully!", "Welcome to Flavoriz")
-      router.push("/meal-plans")
+      
+      // Clear form
+      setFormData({
+        displayName: "",
+        email: "",
+        password: "",
+        confirmPassword: "",
+      })
+      setPasswordStrength(0)
+      
+      // Redirect after a brief delay to ensure auth state is updated
+      setTimeout(() => {
+        setLoading(false)
+        router.push("/meal-plans")
+      }, 1000)
+      
     } catch (error: any) {
+      setLoading(false)
       let errorMessage = "Failed to create account. Please try again."
       
       if (error.code === "auth/email-already-in-use") {
@@ -96,8 +126,6 @@ export default function SignUpPage() {
       
       setError(errorMessage)
       handleError(error, errorMessage)
-    } finally {
-      setLoading(false)
     }
   }
 

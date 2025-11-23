@@ -1,4 +1,62 @@
 const BASE_URL = "https://api.myrecipeapp.com"
+const THEMEALDB_BASE_URL = "https://www.themealdb.com/api/json/v1/1"
+
+// TheMealDB API response types
+interface TheMealDBMeal {
+  idMeal: string
+  strMeal: string
+  strMealAlternate: string | null
+  strCategory: string
+  strArea: string
+  strInstructions: string
+  strMealThumb: string
+  strTags: string | null
+  strYoutube: string | null
+  strIngredient1?: string
+  strIngredient2?: string
+  strIngredient3?: string
+  strIngredient4?: string
+  strIngredient5?: string
+  strIngredient6?: string
+  strIngredient7?: string
+  strIngredient8?: string
+  strIngredient9?: string
+  strIngredient10?: string
+  strIngredient11?: string
+  strIngredient12?: string
+  strIngredient13?: string
+  strIngredient14?: string
+  strIngredient15?: string
+  strIngredient16?: string | null
+  strIngredient17?: string | null
+  strIngredient18?: string | null
+  strIngredient19?: string | null
+  strIngredient20?: string | null
+  strMeasure1?: string
+  strMeasure2?: string
+  strMeasure3?: string
+  strMeasure4?: string
+  strMeasure5?: string
+  strMeasure6?: string
+  strMeasure7?: string
+  strMeasure8?: string
+  strMeasure9?: string
+  strMeasure10?: string
+  strMeasure11?: string
+  strMeasure12?: string
+  strMeasure13?: string
+  strMeasure14?: string
+  strMeasure15?: string
+  strMeasure16?: string | null
+  strMeasure17?: string | null
+  strMeasure18?: string | null
+  strMeasure19?: string | null
+  strMeasure20?: string | null
+}
+
+interface TheMealDBResponse {
+  meals: TheMealDBMeal[] | null
+}
 
 export interface Recipe {
   id: string
@@ -11,6 +69,9 @@ export interface Recipe {
 export interface RecipeDetail extends Recipe {
   ingredients: string[]
   instructions: string[]
+  area?: string
+  tags?: string[]
+  youtube?: string
 }
 
 export interface MealPlan {
@@ -341,12 +402,193 @@ const MOCK_RECIPES_DETAIL: Record<string, RecipeDetail> = {
   },
 }
 
+// Helper function to transform TheMealDB meal to our Recipe format
+function transformMealDBMeal(meal: TheMealDBMeal): Recipe {
+  return {
+    id: meal.idMeal,
+    title: meal.strMeal,
+    image: meal.strMealThumb || "/placeholder.svg",
+    category: meal.strCategory || "Unknown",
+    duration: "30 min", // TheMealDB doesn't provide duration, using default
+  }
+}
+
+// Helper function to extract ingredients from TheMealDB meal
+function extractIngredients(meal: TheMealDBMeal): string[] {
+  const ingredients: string[] = []
+  
+  for (let i = 1; i <= 20; i++) {
+    const ingredient = meal[`strIngredient${i}` as keyof TheMealDBMeal] as string | null | undefined
+    const measure = meal[`strMeasure${i}` as keyof TheMealDBMeal] as string | null | undefined
+    
+    if (ingredient && ingredient.trim()) {
+      const measureStr = measure && measure.trim() ? `${measure.trim()} ` : ""
+      ingredients.push(`${measureStr}${ingredient.trim()}`)
+    }
+  }
+  
+  return ingredients
+}
+
+// Helper function to parse instructions
+function parseInstructions(instructions: string): string[] {
+  return instructions
+    .split(/\r?\n/)
+    .map((step) => step.trim())
+    .filter((step) => step.length > 0)
+}
+
+// Search recipes from TheMealDB
+export async function searchRecipes(query: string): Promise<Recipe[]> {
+  if (!query || query.trim().length === 0) {
+    return []
+  }
+
+  try {
+    const response = await fetch(
+      `${THEMEALDB_BASE_URL}/search.php?s=${encodeURIComponent(query.trim())}`,
+      { cache: "no-store" }
+    )
+    
+    if (!response.ok) {
+      throw new Error("Failed to search recipes")
+    }
+
+    const data: TheMealDBResponse = await response.json()
+    
+    if (!data.meals || data.meals.length === 0) {
+      return []
+    }
+
+    // Filter meals that have images, use placeholder for those without
+    const recipes = data.meals
+      .map(transformMealDBMeal)
+      .map((recipe) => ({
+        ...recipe,
+        image: recipe.image || "/placeholder.svg",
+      }))
+      .filter((recipe) => recipe.image && recipe.image !== "")
+
+    return recipes
+  } catch (error) {
+    console.error("Error searching recipes:", error)
+    return []
+  }
+}
+
+// Get random recipes from TheMealDB
+export async function fetchRandomRecipes(count: number = 10): Promise<Recipe[]> {
+  try {
+    const promises = Array.from({ length: count }, () =>
+      fetch(`${THEMEALDB_BASE_URL}/random.php`, { cache: "no-store" })
+    )
+
+    const responses = await Promise.all(promises)
+    const dataPromises = responses.map((res) => {
+      if (!res.ok) throw new Error("Failed to fetch random recipes")
+      return res.json()
+    })
+
+    const dataArray: TheMealDBResponse[] = await Promise.all(dataPromises)
+    
+    const recipes: Recipe[] = []
+    const seenIds = new Set<string>()
+
+    for (const data of dataArray) {
+      if (data.meals && data.meals.length > 0) {
+        for (const meal of data.meals) {
+          // Avoid duplicates
+          if (!seenIds.has(meal.idMeal)) {
+            seenIds.add(meal.idMeal)
+            const recipe = transformMealDBMeal(meal)
+            // Only include recipes with images
+            if (recipe.image && recipe.image !== "" && recipe.image !== "/placeholder.svg") {
+              recipes.push(recipe)
+            }
+          }
+        }
+      }
+    }
+
+    return recipes
+  } catch (error) {
+    console.error("Error fetching random recipes:", error)
+    return []
+  }
+}
+
+// Fetch recipes by category
+export async function fetchRecipesByCategory(category: string): Promise<Recipe[]> {
+  try {
+    const response = await fetch(
+      `${THEMEALDB_BASE_URL}/filter.php?c=${encodeURIComponent(category)}`,
+      { cache: "no-store" }
+    )
+    
+    if (!response.ok) {
+      throw new Error("Failed to fetch recipes by category")
+    }
+
+    const data = await response.json()
+    
+    if (!data.meals || data.meals.length === 0) {
+      return []
+    }
+
+    // Filter meals that have images
+    const recipes = data.meals
+      .filter((meal: any) => meal.strMealThumb && meal.strMealThumb !== "")
+      .map((meal: any) => ({
+        id: meal.idMeal,
+        title: meal.strMeal,
+        image: meal.strMealThumb || "/placeholder.svg",
+        category: category,
+        duration: "30 min",
+      }))
+
+    return recipes
+  } catch (error) {
+    console.error("Error fetching recipes by category:", error)
+    return []
+  }
+}
+
+// Fetch all available categories
+export async function fetchCategories(): Promise<string[]> {
+  try {
+    const response = await fetch(`${THEMEALDB_BASE_URL}/list.php?c=list`, { cache: "no-store" })
+    
+    if (!response.ok) {
+      throw new Error("Failed to fetch categories")
+    }
+
+    const data = await response.json()
+    
+    if (!data.meals) {
+      return []
+    }
+
+    return data.meals.map((cat: any) => cat.strCategory).filter(Boolean)
+  } catch (error) {
+    console.error("Error fetching categories:", error)
+    return []
+  }
+}
+
+// Main fetch function - now uses TheMealDB
 export async function fetchRecipes(): Promise<Recipe[]> {
   try {
-    const res = await fetch(`${BASE_URL}/recipes`, { cache: "no-store" })
-    if (!res.ok) throw new Error("Failed to fetch recipes")
-    return res.json()
+    // Try to fetch random recipes from TheMealDB
+    const recipes = await fetchRandomRecipes(12)
+    
+    if (recipes.length > 0) {
+      return recipes
+    }
+    
+    // Fallback to mock data if API fails
+    throw new Error("No recipes found")
   } catch (error) {
+    console.error("Error fetching recipes, using fallback:", error)
     // Return mock data for demo
     return [
       {
@@ -411,10 +653,38 @@ export async function fetchRecipes(): Promise<Recipe[]> {
 
 export async function fetchRecipeById(id: string): Promise<RecipeDetail> {
   try {
+    // Try to fetch from TheMealDB first
+    const response = await fetch(`${THEMEALDB_BASE_URL}/lookup.php?i=${id}`, { cache: "no-store" })
+    
+    if (response.ok) {
+      const data: TheMealDBResponse = await response.json()
+      
+      if (data.meals && data.meals.length > 0) {
+        const meal = data.meals[0]
+        const ingredients = extractIngredients(meal)
+        const instructions = parseInstructions(meal.strInstructions)
+        
+        return {
+          id: meal.idMeal,
+          title: meal.strMeal,
+          image: meal.strMealThumb || "/placeholder.svg",
+          category: meal.strCategory || "Unknown",
+          duration: "30 min",
+          ingredients,
+          instructions,
+          area: meal.strArea || undefined,
+          tags: meal.strTags ? meal.strTags.split(",").map((t) => t.trim()) : undefined,
+          youtube: meal.strYoutube || undefined,
+        }
+      }
+    }
+    
+    // Fallback to old API
     const res = await fetch(`${BASE_URL}/recipes/${id}`, { cache: "no-store" })
     if (!res.ok) throw new Error("Failed to fetch recipe")
     return res.json()
   } catch (error) {
+    // Fallback to mock data
     return (
       MOCK_RECIPES_DETAIL[id] || {
         id,
@@ -575,6 +845,11 @@ export async function addRecipeToMealPlan(planId: string, recipe: RecipeDetail):
       }
       plans.push(plan)
     }
+  }
+
+  // Check if plan exists
+  if (!plan) {
+    throw new Error("Meal plan not found")
   }
 
   // Check if recipe already exists in plan

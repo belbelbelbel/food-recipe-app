@@ -1,12 +1,13 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { motion } from "framer-motion"
 import { Eye, EyeOff, Loader2, ChefHat } from "lucide-react"
 import { signIn } from "@/lib/firebase/auth"
 import { handleError, showSuccess } from "@/lib/error-handler"
+import { useAuth } from "@/contexts/auth-context"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -14,11 +15,19 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 
 export default function LoginPage() {
   const router = useRouter()
+  const { user, loading: authLoading } = useAuth()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  // Redirect if already signed in
+  useEffect(() => {
+    if (!authLoading && user) {
+      router.push("/meal-plans")
+    }
+  }, [user, authLoading, router])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -27,9 +36,23 @@ export default function LoginPage() {
 
     try {
       await signIn(email.trim(), password)
+      
+      // Wait a moment for auth state to update
+      await new Promise(resolve => setTimeout(resolve, 500))
+      
       showSuccess("Welcome back!", "Login Successful")
-      router.push("/meal-plans")
+      
+      // Clear form
+      setEmail("")
+      setPassword("")
+      
+      // Redirect after a brief delay
+      setTimeout(() => {
+        setLoading(false)
+        router.push("/meal-plans")
+      }, 1000)
     } catch (error: any) {
+      setLoading(false)
       let errorMessage = "Failed to sign in. Please check your credentials."
       
       if (error.code === "auth/user-not-found") {

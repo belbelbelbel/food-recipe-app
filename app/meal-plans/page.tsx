@@ -1,8 +1,10 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
+import Link from "next/link"
 import { motion } from "framer-motion"
-import { AlertCircle, Plus } from "lucide-react"
+import { AlertCircle, Plus, LogIn } from "lucide-react"
 import { fetchMealPlans, fetchCredits, type MealPlan, type Credits } from "@/lib/api"
 import { getUserMealPlans, type UserMealPlan } from "@/lib/firebase/meal-plans"
 import { MealPlanCard } from "@/components/meal-plan-card"
@@ -10,8 +12,11 @@ import { CreateMealPlanDialog } from "@/components/create-meal-plan-dialog"
 import { LoadingCard } from "@/components/loading-card"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
+import { useAuth } from "@/contexts/auth-context"
 
 export default function MealPlansPage() {
+  const router = useRouter()
+  const { user, loading: authLoading } = useAuth()
   const [userPlans, setUserPlans] = useState<UserMealPlan[]>([])
   const [curatedPlans, setCuratedPlans] = useState<MealPlan[]>([])
   const [credits, setCredits] = useState<Credits | null>(null)
@@ -49,7 +54,7 @@ export default function MealPlansPage() {
           transition={{ duration: 0.6 }}
           className="mb-8 sm:mb-12 lg:mb-16"
         >
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4 sm:mb-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4 sm:mb-6">
             <div>
               <h1 className="text-responsive-hero text-balance mb-2 sm:mb-4">
                 My <span className="text-primary">Meal Plans</span>
@@ -58,17 +63,58 @@ export default function MealPlansPage() {
                 Create and manage your meal plans. Add recipes to build your perfect weekly menu.
               </p>
             </div>
-            <CreateMealPlanDialog onSuccess={loadData}>
-              <Button size="lg" className="rounded-full w-full sm:w-auto">
-                <Plus className="mr-2 h-4 w-4" />
-                Create New Meal Plan
+            {user ? (
+              <CreateMealPlanDialog onSuccess={loadData}>
+                <Button size="lg" className="rounded-full w-full sm:w-auto">
+                  <Plus className="mr-2 h-4 w-4" />
+                  Create New Meal Plan
+                </Button>
+              </CreateMealPlanDialog>
+            ) : (
+              <Button 
+                size="lg" 
+                className="rounded-full w-full sm:w-auto"
+                onClick={() => router.push("/login")}
+              >
+                <LogIn className="mr-2 h-4 w-4" />
+                Sign In to Create Plans
               </Button>
-            </CreateMealPlanDialog>
+            )}
           </div>
         </motion.div>
 
-        {/* Credits Alert */}
-        {!loading && credits && (
+        {/* Sign In Prompt */}
+        {!authLoading && !user && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="mb-6 sm:mb-8 lg:mb-12"
+          >
+            <Alert className="border-primary/20 bg-primary/5 p-4 sm:p-6">
+              <LogIn className="h-4 w-4 sm:h-5 sm:w-5 text-primary flex-shrink-0" />
+              <div className="ml-2 sm:ml-3">
+                <AlertTitle className="text-primary text-sm sm:text-base font-semibold">
+                  Sign In Required
+                </AlertTitle>
+                <AlertDescription className="text-xs sm:text-sm mt-1">
+                  You need to be signed in to create and manage meal plans.{" "}
+                  <Link href="/login" className="font-semibold underline hover:no-underline">
+                    Sign in
+                  </Link>{" "}
+                  or{" "}
+                  <Link href="/signup" className="font-semibold underline hover:no-underline">
+                    create an account
+                  </Link>{" "}
+                  to get started!
+                </AlertDescription>
+              </div>
+            </Alert>
+          </motion.div>
+        )}
+
+        {/* Credits Alert - Only show if signed in */}
+        {!loading && credits && user && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -168,14 +214,28 @@ export default function MealPlansPage() {
               <div className="text-6xl sm:text-8xl mb-4 opacity-20">📅</div>
               <h3 className="text-lg sm:text-xl font-semibold mb-2">No meal plans yet</h3>
               <p className="text-sm sm:text-base text-muted-foreground mb-6">
-                Create your first meal plan to start organizing your weekly meals!
+                {user 
+                  ? "Create your first meal plan to start organizing your weekly meals!"
+                  : "Sign in to create and manage your meal plans!"}
               </p>
-              <CreateMealPlanDialog onSuccess={loadData}>
-                <Button size="lg" className="rounded-full">
-                  <Plus className="mr-2 h-4 w-4" />
-                  Create Your First Meal Plan
-                </Button>
-              </CreateMealPlanDialog>
+              {user ? (
+                <CreateMealPlanDialog onSuccess={loadData}>
+                  <Button size="lg" className="rounded-full">
+                    <Plus className="mr-2 h-4 w-4" />
+                    Create Your First Meal Plan
+                  </Button>
+                </CreateMealPlanDialog>
+              ) : (
+                <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                  <Button size="lg" className="rounded-full" onClick={() => router.push("/login")}>
+                    <LogIn className="mr-2 h-4 w-4" />
+                    Sign In
+                  </Button>
+                  <Button size="lg" variant="outline" className="rounded-full" onClick={() => router.push("/signup")}>
+                    Sign Up
+                  </Button>
+                </div>
+              )}
             </div>
           </motion.div>
         )}

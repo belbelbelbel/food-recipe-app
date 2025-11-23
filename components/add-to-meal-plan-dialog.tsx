@@ -1,7 +1,8 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Loader2, Check } from "lucide-react"
+import { useRouter } from "next/navigation"
+import { Loader2, Check, LogIn } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -11,29 +12,55 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import { fetchMealPlans, type MealPlan } from "@/lib/api"
 import { getUserMealPlans, addRecipeToMealPlan as addRecipeToFirestorePlan, type UserMealPlan } from "@/lib/firebase/meal-plans"
 import type { RecipeDetail } from "@/lib/api"
 import { handleError, showSuccess } from "@/lib/error-handler"
+import { useAuth } from "@/contexts/auth-context"
 import Image from "next/image"
 
 interface AddToMealPlanDialogProps {
   recipe: RecipeDetail
-  children: React.ReactNode
+  children?: React.ReactNode
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
+  onSuccess?: () => void
 }
 
-export function AddToMealPlanDialog({ recipe, children }: AddToMealPlanDialogProps) {
-  const [open, setOpen] = useState(false)
+export function AddToMealPlanDialog({ 
+  recipe, 
+  children, 
+  open: controlledOpen,
+  onOpenChange: controlledOnOpenChange,
+  onSuccess 
+}: AddToMealPlanDialogProps) {
+  const router = useRouter()
+  const { user, loading: authLoading } = useAuth()
+  const [internalOpen, setInternalOpen] = useState(false)
   const [plans, setPlans] = useState<(MealPlan | UserMealPlan)[]>([])
   const [loading, setLoading] = useState(false)
   const [addingToPlan, setAddingToPlan] = useState<string | null>(null)
 
+  // Use controlled or uncontrolled state
+  const open = controlledOpen !== undefined ? controlledOpen : internalOpen
+  const setOpen = controlledOnOpenChange || setInternalOpen
+
+  const handleOpenChange = (newOpen: boolean) => {
+    if (newOpen && !user && !authLoading) {
+      // If not signed in, show message and redirect
+      handleError(new Error("Please sign in to add recipes to meal plans"), "Authentication Required")
+      router.push("/login")
+      return
+    }
+    setOpen(newOpen)
+  }
 
   useEffect(() => {
-    if (open) {
+    if (open && user) {
       loadPlans()
     }
-  }, [open])
+  }, [open, user])
 
   async function loadPlans() {
     try {
@@ -52,6 +79,13 @@ export function AddToMealPlanDialog({ recipe, children }: AddToMealPlanDialogPro
   }
 
   async function handleAddToPlan(planId: string) {
+    // Check authentication
+    if (!user) {
+      handleError(new Error("Please sign in to add recipes to meal plans"), "Authentication Required")
+      router.push("/login")
+      return
+    }
+
     try {
       setAddingToPlan(planId)
       // Check if it's a user plan (from Firestore) or curated plan
@@ -67,6 +101,7 @@ export function AddToMealPlanDialog({ recipe, children }: AddToMealPlanDialogPro
       }
       showSuccess(`${recipe.title} added to meal plan!`, "Success")
       setOpen(false)
+      onSuccess?.()
     } catch (error) {
       handleError(error, "Failed to add recipe to meal plan")
     } finally {
@@ -75,8 +110,8 @@ export function AddToMealPlanDialog({ recipe, children }: AddToMealPlanDialogPro
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>{children}</DialogTrigger>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      {children && <DialogTrigger asChild>{children}</DialogTrigger>}
       <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Add to Meal Plan</DialogTitle>
@@ -85,13 +120,44 @@ export function AddToMealPlanDialog({ recipe, children }: AddToMealPlanDialogPro
           </DialogDescription>
         </DialogHeader>
 
+        {!user && !authLoading && (
+          <Alert className="mt-4">
+            <LogIn className="h-4 w-4" />
+            <AlertDescription>
+              You must be signed in to add recipes to meal plans.{" "}
+              <Button
+                variant="link"
+                className="p-0 h-auto font-semibold"
+                onClick={() => {
+                  setOpen(false)
+                  router.push("/login")
+                }}
+              >
+                Sign in here
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
+
         {loading ? (
           <div className="flex items-center justify-center py-12">
             <Loader2 className="h-6 w-6 animate-spin text-primary" />
           </div>
+        ) : !user ? (
+          <div className="text-center py-12">
+            <LogIn className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+            <p className="text-muted-foreground mb-4">Please sign in to add recipes to meal plans</p>
+            <Button onClick={() => {
+              setOpen(false)
+              router.push("/login")
+            }}>
+              Sign In
+            </Button>
+          </div>
         ) : plans.length === 0 ? (
           <div className="text-center py-12">
-            <p className="text-muted-foreground">No meal plans available</p>
+            <p className="text-muted-foreground mb-4">No meal plans available</p>
+            <p className="text-sm text-muted-foreground">Create a meal plan first to add recipes</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
