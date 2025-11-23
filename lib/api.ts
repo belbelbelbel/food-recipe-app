@@ -463,6 +463,14 @@ export async function fetchMealPlans(): Promise<MealPlan[]> {
 }
 
 export async function fetchMealsByPlanId(planId: string): Promise<Meal[]> {
+  // First check user's custom meal plans
+  const userPlans = getUserMealPlans()
+  const userPlan = userPlans.find((p) => p.id === planId)
+  if (userPlan && userPlan.meals.length > 0) {
+    return userPlan.meals
+  }
+
+  // Fall back to API or mock data
   try {
     const res = await fetch(`${BASE_URL}/meals?planId=${planId}`, { cache: "no-store" })
     if (!res.ok) throw new Error("Failed to fetch meals")
@@ -491,4 +499,116 @@ export async function fetchCredits(): Promise<Credits> {
     // Return mock data for demo - set to 2 to show available credits
     return { creditsLeft: 2 }
   }
+}
+
+// User's custom meal plans (stored in localStorage for demo)
+export interface UserMealPlan {
+  id: string
+  title: string
+  description: string
+  image: string
+  meals: Meal[]
+  createdAt: string
+}
+
+const STORAGE_KEY = "flavoriz_user_meal_plans"
+
+export function getUserMealPlans(): UserMealPlan[] {
+  if (typeof window === "undefined") return []
+  
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY)
+    if (stored) {
+      return JSON.parse(stored)
+    }
+  } catch (error) {
+    console.error("Failed to load user meal plans:", error)
+  }
+  return []
+}
+
+export function saveUserMealPlans(plans: UserMealPlan[]): void {
+  if (typeof window === "undefined") return
+  
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(plans))
+  } catch (error) {
+    console.error("Failed to save user meal plans:", error)
+    throw new Error("Failed to save meal plan")
+  }
+}
+
+export async function addRecipeToMealPlan(planId: string, recipe: RecipeDetail): Promise<void> {
+  const plans = getUserMealPlans()
+  let plan = plans.find((p) => p.id === planId)
+
+  if (!plan) {
+    // Try to get template from existing meal plans
+    try {
+      const allPlans = await fetchMealPlans()
+      const templatePlan = allPlans.find((p) => p.id === planId)
+      if (templatePlan) {
+        plan = {
+          id: planId,
+          title: templatePlan.title,
+          description: templatePlan.description,
+          image: templatePlan.image,
+          meals: [],
+          createdAt: new Date().toISOString(),
+        }
+        plans.push(plan)
+      }
+    } catch (error) {
+      // If fetch fails, create a default plan
+      const planTitles: Record<string, string> = {
+        m1: "Healthy Week Plan",
+        m2: "Quick & Easy Meals",
+        m3: "Family Favorites",
+      }
+      plan = {
+        id: planId,
+        title: planTitles[planId] || "My Meal Plan",
+        description: "Your custom meal plan",
+        image: "/healthy-meal-prep.png",
+        meals: [],
+        createdAt: new Date().toISOString(),
+      }
+      plans.push(plan)
+    }
+  }
+
+  // Check if recipe already exists in plan
+  const existingMeal = plan.meals.find((m) => m.recipeId === recipe.id)
+  if (existingMeal) {
+    throw new Error("Recipe already in this meal plan")
+  }
+
+  // Add recipe as meal
+  const newMeal: Meal = {
+    id: `meal-${Date.now()}`,
+    title: recipe.title,
+    image: recipe.image,
+    duration: recipe.duration,
+    recipeId: recipe.id,
+  }
+
+  plan.meals.push(newMeal)
+  saveUserMealPlans(plans)
+}
+
+export function getAllMealPlans(): Promise<(MealPlan | UserMealPlan)[]> {
+  return fetchMealPlans().then((plans) => {
+    const userPlans = getUserMealPlans()
+    // Merge user plans with fetched plans, prioritizing user plans
+    const allPlans: (MealPlan | UserMealPlan)[] = [...plans]
+    
+    // Add user plans that don't exist in fetched plans
+    userPlans.forEach((userPlan) => {
+      if (!allPlans.find((p) => p.id === userPlan.id)) {
+        allPlans.push(userPlan)
+      }
+    })
+    
+    return allPlans
+  })
 }

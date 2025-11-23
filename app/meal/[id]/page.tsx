@@ -18,10 +18,15 @@ export default function MealDetailsPage() {
   useEffect(() => {
     async function loadMeals() {
       if (params.id) {
-        setLoading(true)
-        const data = await fetchMealsByPlanId(params.id as string)
-        setMeals(data)
-        setLoading(false)
+        try {
+          setLoading(true)
+          const data = await fetchMealsByPlanId(params.id as string)
+          setMeals(data)
+        } catch (error) {
+          console.error("Failed to load meals:", error)
+        } finally {
+          setLoading(false)
+        }
       }
     }
     loadMeals()

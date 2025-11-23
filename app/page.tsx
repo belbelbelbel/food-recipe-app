@@ -16,10 +16,16 @@ export default function HomePage() {
 
   useEffect(() => {
     async function loadRecipes() {
-      setLoading(true)
-      const data = await fetchRecipes()
-      setRecipes(data)
-      setLoading(false)
+      try {
+        setLoading(true)
+        const data = await fetchRecipes()
+        setRecipes(data)
+      } catch (error) {
+        console.error("Failed to load recipes:", error)
+        // Error is handled by API fallback, but we could show a toast here if needed
+      } finally {
+        setLoading(false)
+      }
     }
     loadRecipes()
   }, [])

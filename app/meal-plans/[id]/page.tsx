@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { useParams } from "next/navigation"
 import { motion } from "framer-motion"
 import { fetchMealsByPlanId, type Meal } from "@/lib/api"
+import { getMealPlanById, type UserMealPlan } from "@/lib/firebase/meal-plans"
 import { MealCard } from "@/components/meal-card"
 import { LoadingCard } from "@/components/loading-card"
 
@@ -15,10 +16,22 @@ export default function MealPlanDetailPage() {
   useEffect(() => {
     async function loadMeals() {
       if (params.id) {
-        setLoading(true)
-        const data = await fetchMealsByPlanId(params.id as string)
-        setMeals(data)
-        setLoading(false)
+        try {
+          setLoading(true)
+          // First try to get from Firestore (user plans)
+          const userPlan = await getMealPlanById(params.id as string)
+          if (userPlan && userPlan.meals.length > 0) {
+            setMeals(userPlan.meals)
+          } else {
+            // Fall back to API/mock data for curated plans
+            const data = await fetchMealsByPlanId(params.id as string)
+            setMeals(data)
+          }
+        } catch (error) {
+          console.error("Failed to load meals:", error)
+        } finally {
+          setLoading(false)
+        }
       }
     }
     loadMeals()

@@ -2,25 +2,40 @@
 
 import { useEffect, useState } from "react"
 import { motion } from "framer-motion"
-import { AlertCircle } from "lucide-react"
+import { AlertCircle, Plus } from "lucide-react"
 import { fetchMealPlans, fetchCredits, type MealPlan, type Credits } from "@/lib/api"
+import { getUserMealPlans, type UserMealPlan } from "@/lib/firebase/meal-plans"
 import { MealPlanCard } from "@/components/meal-plan-card"
+import { CreateMealPlanDialog } from "@/components/create-meal-plan-dialog"
 import { LoadingCard } from "@/components/loading-card"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Button } from "@/components/ui/button"
 
 export default function MealPlansPage() {
-  const [plans, setPlans] = useState<MealPlan[]>([])
+  const [userPlans, setUserPlans] = useState<UserMealPlan[]>([])
+  const [curatedPlans, setCuratedPlans] = useState<MealPlan[]>([])
   const [credits, setCredits] = useState<Credits | null>(null)
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    async function loadData() {
+  const loadData = async () => {
+    try {
       setLoading(true)
-      const [plansData, creditsData] = await Promise.all([fetchMealPlans(), fetchCredits()])
-      setPlans(plansData)
+      const [userPlansData, curatedPlansData, creditsData] = await Promise.all([
+        getUserMealPlans(),
+        fetchMealPlans(),
+        fetchCredits(),
+      ])
+      setUserPlans(userPlansData)
+      setCuratedPlans(curatedPlansData)
       setCredits(creditsData)
+    } catch (error) {
+      console.error("Failed to load meal plans:", error)
+    } finally {
       setLoading(false)
     }
+  }
+
+  useEffect(() => {
     loadData()
   }, [])
 
@@ -34,13 +49,22 @@ export default function MealPlansPage() {
           transition={{ duration: 0.6 }}
           className="mb-8 sm:mb-12 lg:mb-16"
         >
-          <h1 className="text-responsive-hero text-balance mb-4 sm:mb-6">
-            Curated <span className="text-primary">Meal Plans</span>
-          </h1>
-          <p className="text-responsive-subtitle text-muted-foreground text-pretty max-w-3xl">
-            Discover weekly meal plans designed to make your cooking journey easier and more delicious.
-            Perfect for busy lifestyles and diverse dietary needs.
-          </p>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4 sm:mb-6">
+            <div>
+              <h1 className="text-responsive-hero text-balance mb-2 sm:mb-4">
+                My <span className="text-primary">Meal Plans</span>
+              </h1>
+              <p className="text-responsive-subtitle text-muted-foreground text-pretty max-w-3xl">
+                Create and manage your meal plans. Add recipes to build your perfect weekly menu.
+              </p>
+            </div>
+            <CreateMealPlanDialog onSuccess={loadData}>
+              <Button size="lg" className="rounded-full w-full sm:w-auto">
+                <Plus className="mr-2 h-4 w-4" />
+                Create New Meal Plan
+              </Button>
+            </CreateMealPlanDialog>
+          </div>
         </motion.div>
 
         {/* Credits Alert */}
@@ -80,25 +104,61 @@ export default function MealPlansPage() {
           </motion.div>
         )}
 
-        {/* Meal Plans Grid */}
-        {loading ? (
-          <div className="grid-responsive-large">
-            {Array.from({ length: 3 }).map((_, i) => (
-              <LoadingCard key={i} />
-            ))}
-          </div>
-        ) : plans.length > 0 ? (
+        {/* Your Meal Plans */}
+        {userPlans.length > 0 && (
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5 }}
-            className="grid-responsive-large"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="mb-12"
           >
-            {plans.map((plan, index) => (
-              <MealPlanCard key={plan.id} plan={plan} index={index} />
-            ))}
+            <h2 className="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6">Your Plans</h2>
+            <div className="grid-responsive-large">
+              {userPlans.map((plan, index) => (
+                <MealPlanCard
+                  key={plan.id}
+                  plan={plan}
+                  index={index}
+                  onUpdate={loadData}
+                />
+              ))}
+            </div>
           </motion.div>
-        ) : (
+        )}
+
+        {/* Curated Meal Plans */}
+        {curatedPlans.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.3 }}
+          >
+            <h2 className="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6">
+              {userPlans.length > 0 ? "Curated Plans" : "Featured Meal Plans"}
+            </h2>
+            {loading ? (
+              <div className="grid-responsive-large">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <LoadingCard key={i} />
+                ))}
+              </div>
+            ) : (
+              <div className="grid-responsive-large">
+                {curatedPlans.map((plan, index) => (
+                  <MealPlanCard
+                    key={plan.id}
+                    plan={plan}
+                    index={index}
+                    onUpdate={loadData}
+                  />
+                ))}
+              </div>
+            )}
+          </motion.div>
+        )}
+
+        {/* Empty State */}
+        {!loading && userPlans.length === 0 && curatedPlans.length === 0 && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -106,10 +166,16 @@ export default function MealPlansPage() {
           >
             <div className="max-w-md mx-auto">
               <div className="text-6xl sm:text-8xl mb-4 opacity-20">📅</div>
-              <h3 className="text-lg sm:text-xl font-semibold mb-2">No meal plans available</h3>
-              <p className="text-sm sm:text-base text-muted-foreground">
-                Check back soon for new curated meal plans designed to make your week delicious and stress-free.
+              <h3 className="text-lg sm:text-xl font-semibold mb-2">No meal plans yet</h3>
+              <p className="text-sm sm:text-base text-muted-foreground mb-6">
+                Create your first meal plan to start organizing your weekly meals!
               </p>
+              <CreateMealPlanDialog onSuccess={loadData}>
+                <Button size="lg" className="rounded-full">
+                  <Plus className="mr-2 h-4 w-4" />
+                  Create Your First Meal Plan
+                </Button>
+              </CreateMealPlanDialog>
             </div>
           </motion.div>
         )}

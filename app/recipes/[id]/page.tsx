@@ -7,6 +7,7 @@ import { motion } from "framer-motion"
 import { Clock, ChefHat } from "lucide-react"
 import { fetchRecipeById, type RecipeDetail } from "@/lib/api"
 import { Button } from "@/components/ui/button"
+import { AddToMealPlanDialog } from "@/components/add-to-meal-plan-dialog"
 
 export default function RecipeDetailPage() {
   const params = useParams()
@@ -16,10 +17,16 @@ export default function RecipeDetailPage() {
   useEffect(() => {
     async function loadRecipe() {
       if (params.id) {
-        setLoading(true)
-        const data = await fetchRecipeById(params.id as string)
-        setRecipe(data)
-        setLoading(false)
+        try {
+          setLoading(true)
+          const data = await fetchRecipeById(params.id as string)
+          setRecipe(data)
+        } catch (error) {
+          console.error("Failed to load recipe:", error)
+          // Error is handled by API fallback
+        } finally {
+          setLoading(false)
+        }
       }
     }
     loadRecipe()
@@ -73,9 +80,11 @@ export default function RecipeDetailPage() {
               </span>
             </div>
             <h1 className="text-4xl md:text-5xl font-bold text-balance mb-4">{recipe.title}</h1>
-            <Button size="lg" className="rounded-full">
-              Add to Meal Plan
-            </Button>
+            <AddToMealPlanDialog recipe={recipe}>
+              <Button size="lg" className="rounded-full">
+                Add to Meal Plan
+              </Button>
+            </AddToMealPlanDialog>
           </div>
 
           {/* Ingredients */}
