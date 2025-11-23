@@ -29,9 +29,11 @@ export function MealPlanCard({ plan, index, onUpdate }: MealPlanCardProps) {
       whileTap={{ scale: 0.98 }}
       className="group w-full relative"
     >
-      {/* Menu Button - Only for user plans */}
+      {/* Menu Button - Only for user plans - Always visible */}
       {isUserPlan && (
-        <div className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div 
+          className="absolute top-2 right-2 z-30"
+        >
           <MealPlanMenu plan={plan as UserMealPlan} onUpdate={onUpdate} />
         </div>
       )}

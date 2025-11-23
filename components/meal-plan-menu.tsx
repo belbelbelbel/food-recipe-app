@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { MoreVertical, Edit, Trash2, Copy, Loader2 } from "lucide-react"
+import { MoreVertical, Edit, Trash2, Copy, Loader2, Users } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -32,6 +32,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { updateMealPlan, deleteMealPlan, duplicateMealPlan, type UserMealPlan } from "@/lib/firebase/meal-plans"
 import { handleError, showSuccess } from "@/lib/error-handler"
+import { AddCollaboratorDialog } from "./add-collaborator-dialog"
 
 interface MealPlanMenuProps {
   plan: UserMealPlan
@@ -41,6 +42,7 @@ interface MealPlanMenuProps {
 export function MealPlanMenu({ plan, onUpdate }: MealPlanMenuProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [editDialogOpen, setEditDialogOpen] = useState(false)
+  const [collaboratorDialogOpen, setCollaboratorDialogOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [title, setTitle] = useState(plan.title)
   const [description, setDescription] = useState(plan.description)
@@ -100,7 +102,12 @@ export function MealPlanMenu({ plan, onUpdate }: MealPlanMenuProps) {
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="h-8 w-8 p-0 bg-background/80 backdrop-blur-sm hover:bg-background border border-border shadow-sm"
+            onClick={(e) => e.stopPropagation()}
+          >
             <MoreVertical className="h-4 w-4" />
             <span className="sr-only">Open menu</span>
           </Button>
@@ -110,6 +117,12 @@ export function MealPlanMenu({ plan, onUpdate }: MealPlanMenuProps) {
             <Edit className="mr-2 h-4 w-4" />
             Edit
           </DropdownMenuItem>
+          <AddCollaboratorDialog plan={plan} onSuccess={onUpdate}>
+            <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+              <Users className="mr-2 h-4 w-4" />
+              Add Collaborators
+            </DropdownMenuItem>
+          </AddCollaboratorDialog>
           <DropdownMenuItem onClick={handleDuplicate} disabled={loading}>
             <Copy className="mr-2 h-4 w-4" />
             Duplicate

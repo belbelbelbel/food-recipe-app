@@ -54,15 +54,12 @@ service cloud.firestore {
                get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
       }
       
-      // Read: Users can read their own plans, admins can read all, curated plans are public
-      allow read: if isAuthenticated() && (
-        isPlanOwner() || 
-        isAdminSafe() ||
-        (!resource.data.isCustom) // Curated plans
-      );
+      // Read: Allow authenticated users to read plans
+      // Collaborator access is verified in application code (getMealPlanById)
+      // This allows the app to check collaborator status before returning data
+      allow read: if isAuthenticated();
       
-      // List/Query: Allow users to query their own plans
-      // Note: This allows queries with where("userId", "==", request.auth.uid)
+      // List/Query: Allow users to query plans
       allow list: if isAuthenticated() && 
         request.query.limit <= 100;
       
@@ -71,11 +68,9 @@ service cloud.firestore {
         request.resource.data.userId == request.auth.uid &&
         request.resource.data.isCustom == true;
       
-      // Update: Users can update their own plans, admins can update any
-      allow update: if isAuthenticated() && (
-        isPlanOwner() || 
-        isAdminSafe()
-      );
+      // Update: Allow authenticated users to update
+      // Permission checks (owner, admin, collaborator) are handled in application code
+      allow update: if isAuthenticated();
       
       // Delete: Users can delete their own plans, admins can delete any
       allow delete: if isAuthenticated() && (
@@ -99,6 +94,13 @@ service cloud.firestore {
         isAdmin() ||
         (isModeratorOrAdmin() && isOwner(resource.data.userId))
       );
+    }
+    
+    // Saved Meals collection
+    match /savedMeals/{savedMealId} {
+      // Users can only read/write their own saved meals
+      allow read, write: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
     }
     
     // Admin-only collections

@@ -1,12 +1,14 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { motion } from "framer-motion"
-import { Clock, Plus, Loader2 } from "lucide-react"
-import type { Recipe } from "@/lib/api"
+import { Clock } from "lucide-react"
+import type { Recipe, RecipeDetail } from "@/lib/api"
 import { AddToMealPlanButton } from "./add-to-meal-plan-button"
+import { SaveMealButton } from "./save-meal-button"
+import { fetchRecipeById } from "@/lib/api"
 
 interface RecipeCardProps {
   recipe: Recipe
@@ -15,6 +17,21 @@ interface RecipeCardProps {
 
 export function RecipeCard({ recipe, index }: RecipeCardProps) {
   const [imageLoaded, setImageLoaded] = useState(false)
+  const [recipeDetail, setRecipeDetail] = useState<RecipeDetail | null>(null)
+
+  // Load recipe details for save button
+  useEffect(() => {
+    const loadDetails = async () => {
+      try {
+        const detail = await fetchRecipeById(recipe.id)
+        setRecipeDetail(detail)
+      } catch (error) {
+        // Silently fail - save button just won't show
+        console.error("Failed to load recipe details:", error)
+      }
+    }
+    loadDetails()
+  }, [recipe.id])
 
   return (
     <motion.div
@@ -32,8 +49,10 @@ export function RecipeCard({ recipe, index }: RecipeCardProps) {
             <div className="absolute inset-0 bg-muted animate-pulse" />
           )}
           <Image
-            src={recipe.image || "/placeholder.svg"}
-            alt={recipe.title}
+            src={(recipe.image && recipe.image.trim() !== "" && recipe.image !== "null") 
+              ? recipe.image 
+              : "/placeholder.svg"}
+            alt={recipe.title || "Recipe"}
             fill
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 25vw"
             className={`object-cover transition-all duration-300 group-hover:scale-105 ${
@@ -52,9 +71,12 @@ export function RecipeCard({ recipe, index }: RecipeCardProps) {
             </div>
           </div>
 
-          {/* Add to Meal Plan Button - Top Left (Desktop) */}
-          <div className="absolute top-2 left-2 sm:top-3 sm:left-3 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 hidden sm:block">
+          {/* Action Buttons - Top Left (Desktop) */}
+          <div className="absolute top-2 left-2 sm:top-3 sm:left-3 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 hidden sm:flex gap-2">
             <AddToMealPlanButton recipe={recipe} variant="icon" />
+            {recipeDetail && (
+              <SaveMealButton recipe={recipeDetail} variant="icon" />
+            )}
           </div>
         </div>
         
@@ -74,9 +96,12 @@ export function RecipeCard({ recipe, index }: RecipeCardProps) {
             </div>
           </Link>
 
-          {/* Add to Meal Plan Button - Bottom (Mobile) */}
-          <div className="mt-3 sm:hidden">
+          {/* Action Buttons - Bottom (Mobile) */}
+          <div className="mt-3 sm:hidden flex gap-2">
             <AddToMealPlanButton recipe={recipe} variant="button" />
+            {recipeDetail && (
+              <SaveMealButton recipe={recipeDetail} variant="button" />
+            )}
           </div>
         </div>
       </div>

@@ -15,6 +15,7 @@ import {
   type QuerySnapshot,
   serverTimestamp,
 } from "firebase/firestore"
+import { getUserProfile } from "./auth"
 import { db } from "./config"
 import { getCurrentUserId, getCurrentUserRole, isAdmin } from "./auth"
 import type { Meal, RecipeDetail } from "../api"
@@ -32,6 +33,7 @@ export interface UserMealPlan {
   createdAt: string
   updatedAt: string
   isCustom: boolean
+  collaborators?: string[] // Array of user IDs who have access
 }
 
 const MEAL_PLANS_COLLECTION = "mealPlans"
@@ -109,28 +111,42 @@ export async function getUserMealPlans(): Promise<UserMealPlan[]> {
 
     console.log("Fetching meal plans for user:", userId)
 
-    // Try with orderBy first, but if it fails (no index), try without
-    let querySnapshot
+    // Get plans where user is owner
+    let ownerPlansSnapshot
     try {
-      const q = query(
+      const ownerQuery = query(
         collection(db, MEAL_PLANS_COLLECTION),
         where("userId", "==", userId),
         orderBy("updatedAt", "desc")
       )
-      querySnapshot = await getDocs(q)
+      ownerPlansSnapshot = await getDocs(ownerQuery)
     } catch (orderByError: any) {
       // If orderBy fails (likely missing index), try without it
       console.warn("orderBy failed, trying without it:", orderByError)
-      const q = query(
+      const ownerQuery = query(
         collection(db, MEAL_PLANS_COLLECTION),
         where("userId", "==", userId)
       )
-      querySnapshot = await getDocs(q)
+      ownerPlansSnapshot = await getDocs(ownerQuery)
+    }
+
+    // Get plans where user is a collaborator
+    // Note: Firestore doesn't support array-contains in where clauses easily,
+    // so we'll fetch all plans and filter in code (for small datasets this is fine)
+    let collaboratorPlansSnapshot
+    try {
+      const allPlansQuery = query(collection(db, MEAL_PLANS_COLLECTION))
+      collaboratorPlansSnapshot = await getDocs(allPlansQuery)
+    } catch (error) {
+      console.warn("Failed to fetch collaborator plans:", error)
+      collaboratorPlansSnapshot = { forEach: () => {} } as any
     }
 
     const plans: UserMealPlan[] = []
+    const planIds = new Set<string>()
 
-    querySnapshot.forEach((doc) => {
+    // Add owner plans
+    ownerPlansSnapshot.forEach((doc) => {
       const data = doc.data()
       const plan: UserMealPlan = {
         id: doc.id,
@@ -142,8 +158,37 @@ export async function getUserMealPlans(): Promise<UserMealPlan[]> {
         createdAt: data.createdAt?.toDate?.()?.toISOString() || data.createdAt || new Date().toISOString(),
         updatedAt: data.updatedAt?.toDate?.()?.toISOString() || data.updatedAt || new Date().toISOString(),
         isCustom: data.isCustom ?? true,
+        collaborators: data.collaborators || [],
       }
       plans.push(plan)
+      planIds.add(doc.id)
+    })
+
+    // Add collaborator plans (where user is in collaborators array)
+    collaboratorPlansSnapshot.forEach((doc) => {
+      // Skip if already added as owner plan
+      if (planIds.has(doc.id)) return
+
+      const data = doc.data()
+      const collaborators = data.collaborators || []
+      
+      // Check if current user is a collaborator
+      if (Array.isArray(collaborators) && collaborators.includes(userId)) {
+        const plan: UserMealPlan = {
+          id: doc.id,
+          userId: data.userId,
+          title: data.title,
+          description: data.description || "",
+          image: data.image || "/healthy-meal-prep.png",
+          meals: data.meals || [],
+          createdAt: data.createdAt?.toDate?.()?.toISOString() || data.createdAt || new Date().toISOString(),
+          updatedAt: data.updatedAt?.toDate?.()?.toISOString() || data.updatedAt || new Date().toISOString(),
+          isCustom: data.isCustom ?? true,
+          collaborators: collaborators,
+        }
+        plans.push(plan)
+        planIds.add(doc.id)
+      }
     })
 
     // Sort by updatedAt manually if we couldn't use orderBy
@@ -186,6 +231,32 @@ export async function getMealPlanById(planId: string): Promise<UserMealPlan | nu
     }
 
     const data = planSnap.data()
+    const currentUserId = getCurrentUserIdWithFallback()
+    
+    // Check if user has access (owner, collaborator, or admin)
+    // For curated plans (isCustom = false), allow access
+    if (data.isCustom !== false) {
+      const isOwner = data.userId === currentUserId
+      const collaborators = data.collaborators || []
+      const isCollaborator = Array.isArray(collaborators) && collaborators.includes(currentUserId)
+      
+      // If user is not owner, collaborator, or admin, check admin status
+      if (!isOwner && !isCollaborator) {
+        try {
+          const userIsAdmin = await isAdmin()
+          if (!userIsAdmin) {
+            // User doesn't have access
+            console.warn(`User ${currentUserId} doesn't have access to plan ${planId}`)
+            return null
+          }
+        } catch (adminError) {
+          // Admin check failed, deny access
+          console.warn(`Admin check failed for plan ${planId}:`, adminError)
+          return null
+        }
+      }
+    }
+
     return {
       id: planSnap.id,
       userId: data.userId,
@@ -196,9 +267,15 @@ export async function getMealPlanById(planId: string): Promise<UserMealPlan | nu
       createdAt: data.createdAt?.toDate?.()?.toISOString() || data.createdAt || new Date().toISOString(),
       updatedAt: data.updatedAt?.toDate?.()?.toISOString() || data.updatedAt || new Date().toISOString(),
       isCustom: data.isCustom ?? true,
+      collaborators: data.collaborators || [],
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error fetching meal plan:", error)
+    // If it's a permission error, return null (user doesn't have access)
+    if (error.code === "permission-denied") {
+      console.warn("Permission denied accessing meal plan:", planId)
+      return null
+    }
     return null
   }
 }
@@ -222,10 +299,32 @@ export async function updateMealPlan(
     }
 
     const currentUserId = getCurrentUserIdWithFallback()
-    const userIsAdmin = await isAdmin()
+    if (!currentUserId) {
+      throw new Error("You must be signed in to update meal plans")
+    }
 
-    if (plan.userId !== currentUserId && !userIsAdmin) {
-      throw new Error("You don't have permission to update this meal plan")
+    console.log("Updating meal plan:", {
+      planId,
+      planUserId: plan.userId,
+      currentUserId,
+      match: plan.userId === currentUserId
+    })
+
+    // Check if user owns the plan
+    if (plan.userId !== currentUserId) {
+      // Try to check if user is admin, but don't fail if profile doesn't exist
+      try {
+        const userIsAdmin = await isAdmin()
+        if (!userIsAdmin) {
+          throw new Error("You don't have permission to update this meal plan")
+        }
+      } catch (adminError: any) {
+        // If admin check fails (e.g., profile doesn't exist), check ownership only
+        if (adminError.message?.includes("permission")) {
+          throw adminError
+        }
+        throw new Error("You don't have permission to update this meal plan")
+      }
     }
 
     const planRef = doc(db, MEAL_PLANS_COLLECTION, planId)
@@ -233,8 +332,12 @@ export async function updateMealPlan(
       ...updates,
       updatedAt: serverTimestamp(),
     })
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error updating meal plan:", error)
+    // Re-throw with a more user-friendly message
+    if (error.code === "permission-denied") {
+      throw new Error("Permission denied. Make sure you own this meal plan and Firestore rules are deployed.")
+    }
     throw error
   }
 }
@@ -255,16 +358,42 @@ export async function deleteMealPlan(planId: string): Promise<void> {
     }
 
     const currentUserId = getCurrentUserIdWithFallback()
-    const userIsAdmin = await isAdmin()
+    if (!currentUserId) {
+      throw new Error("You must be signed in to delete meal plans")
+    }
 
-    if (plan.userId !== currentUserId && !userIsAdmin) {
-      throw new Error("You don't have permission to delete this meal plan")
+    console.log("Deleting meal plan:", {
+      planId,
+      planUserId: plan.userId,
+      currentUserId,
+      match: plan.userId === currentUserId
+    })
+
+    // Check if user owns the plan
+    if (plan.userId !== currentUserId) {
+      // Try to check if user is admin, but don't fail if profile doesn't exist
+      try {
+        const userIsAdmin = await isAdmin()
+        if (!userIsAdmin) {
+          throw new Error("You don't have permission to delete this meal plan")
+        }
+      } catch (adminError: any) {
+        // If admin check fails (e.g., profile doesn't exist), check ownership only
+        if (adminError.message?.includes("permission")) {
+          throw adminError
+        }
+        throw new Error("You don't have permission to delete this meal plan")
+      }
     }
 
     const planRef = doc(db, MEAL_PLANS_COLLECTION, planId)
     await deleteDoc(planRef)
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error deleting meal plan:", error)
+    // Re-throw with a more user-friendly message
+    if (error.code === "permission-denied") {
+      throw new Error("Permission denied. Make sure you own this meal plan and Firestore rules are deployed.")
+    }
     throw error
   }
 }
@@ -283,11 +412,17 @@ export async function addRecipeToMealPlan(planId: string, recipe: RecipeDetail):
       throw new Error("Meal plan not found")
     }
 
-    // Check ownership or admin role
+    // Check ownership, admin role, or collaborator
     const currentUserId = getCurrentUserIdWithFallback()
-    const userIsAdmin = await isAdmin()
+    if (!currentUserId) {
+      throw new Error("You must be signed in to add recipes to meal plans")
+    }
 
-    if (plan.userId !== currentUserId && !userIsAdmin) {
+    const userIsAdmin = await isAdmin().catch(() => false)
+    const isOwner = plan.userId === currentUserId
+    const isCollaborator = plan.collaborators?.includes(currentUserId) || false
+
+    if (!isOwner && !userIsAdmin && !isCollaborator) {
       throw new Error("You don't have permission to modify this meal plan")
     }
 
@@ -439,3 +574,101 @@ function removeMealFromLocalStorageMealPlan(planId: string, mealId: string): voi
   }
 }
 
+
+// Add collaborator to meal plan
+export async function addCollaboratorToMealPlan(planId: string, collaboratorUserId: string): Promise<void> {
+  if (!db) throw new Error("Firestore not initialized")
+
+  const currentUserId = getCurrentUserIdWithFallback()
+  if (!currentUserId) {
+    throw new Error("You must be signed in to add collaborators")
+  }
+
+  const plan = await getMealPlanById(planId)
+  if (!plan) {
+    throw new Error("Meal plan not found")
+  }
+
+  if (plan.userId !== currentUserId) {
+    throw new Error("Only the plan owner can add collaborators")
+  }
+
+  if (collaboratorUserId === currentUserId) {
+    throw new Error("You cannot add yourself as a collaborator")
+  }
+
+  const currentCollaborators = plan.collaborators || []
+  if (currentCollaborators.includes(collaboratorUserId)) {
+    throw new Error("User is already a collaborator")
+  }
+
+  const planRef = doc(db, MEAL_PLANS_COLLECTION, planId)
+  await updateDoc(planRef, {
+    collaborators: [...currentCollaborators, collaboratorUserId],
+    updatedAt: serverTimestamp(),
+  })
+}
+
+// Remove collaborator from meal plan
+export async function removeCollaboratorFromMealPlan(planId: string, collaboratorUserId: string): Promise<void> {
+  if (!db) throw new Error("Firestore not initialized")
+
+  const currentUserId = getCurrentUserIdWithFallback()
+  if (!currentUserId) {
+    throw new Error("You must be signed in to remove collaborators")
+  }
+
+  const plan = await getMealPlanById(planId)
+  if (!plan) {
+    throw new Error("Meal plan not found")
+  }
+
+  if (plan.userId !== currentUserId) {
+    throw new Error("Only the plan owner can remove collaborators")
+  }
+
+  const currentCollaborators = plan.collaborators || []
+  const updatedCollaborators = currentCollaborators.filter((id) => id !== collaboratorUserId)
+
+  const planRef = doc(db, MEAL_PLANS_COLLECTION, planId)
+  await updateDoc(planRef, {
+    collaborators: updatedCollaborators,
+    updatedAt: serverTimestamp(),
+  })
+}
+
+// Search users by email
+export async function searchUsersByEmail(emailQuery: string): Promise<Array<{ uid: string; email: string; displayName?: string }>> {
+  if (!db) return []
+
+  if (!emailQuery || emailQuery.trim().length < 2) {
+    return []
+  }
+
+  try {
+    const usersRef = collection(db, "users")
+    const querySnapshot = await getDocs(usersRef)
+    const results: Array<{ uid: string; email: string; displayName?: string }> = []
+
+    const queryLower = emailQuery.toLowerCase().trim()
+
+    querySnapshot.forEach((doc) => {
+      const data = doc.data()
+      const email = data.email?.toLowerCase() || ""
+      const displayName = data.displayName?.toLowerCase() || ""
+
+      if (email.includes(queryLower) || displayName.includes(queryLower)) {
+        results.push({
+          uid: doc.id,
+          email: data.email,
+          displayName: data.displayName,
+        })
+      }
+    })
+
+    return results.slice(0, 10)
+  } catch (error) {
+    console.error("Error searching users:", error)
+    return []
+  }
+}

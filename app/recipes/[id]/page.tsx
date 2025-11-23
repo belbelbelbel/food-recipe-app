@@ -8,6 +8,7 @@ import { Clock, ChefHat, LogIn } from "lucide-react"
 import { fetchRecipeById, type RecipeDetail } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { AddToMealPlanDialog } from "@/components/add-to-meal-plan-dialog"
+import { SaveMealButton } from "@/components/save-meal-button"
 import { useAuth } from "@/contexts/auth-context"
 
 export default function RecipeDetailPage() {
@@ -83,22 +84,27 @@ export default function RecipeDetailPage() {
               </span>
             </div>
             <h1 className="text-4xl md:text-5xl font-bold text-balance mb-4">{recipe.title}</h1>
-            {user ? (
-              <AddToMealPlanDialog recipe={recipe}>
-                <Button size="lg" className="rounded-full">
-                  Add to Meal Plan
+            <div className="flex gap-3 flex-wrap">
+              {user ? (
+                <>
+                  <AddToMealPlanDialog recipe={recipe}>
+                    <Button size="lg" className="rounded-full">
+                      Add to Meal Plan
+                    </Button>
+                  </AddToMealPlanDialog>
+                  <SaveMealButton recipe={recipe} variant="button" />
+                </>
+              ) : (
+                <Button 
+                  size="lg" 
+                  className="rounded-full"
+                  onClick={() => router.push("/login")}
+                >
+                  <LogIn className="mr-2 h-4 w-4" />
+                  Sign In to Add to Meal Plan
                 </Button>
-              </AddToMealPlanDialog>
-            ) : (
-              <Button 
-                size="lg" 
-                className="rounded-full"
-                onClick={() => router.push("/login")}
-              >
-                <LogIn className="mr-2 h-4 w-4" />
-                Sign In to Add to Meal Plan
-              </Button>
-            )}
+              )}
+            </div>
           </div>
 
           {/* Ingredients */}

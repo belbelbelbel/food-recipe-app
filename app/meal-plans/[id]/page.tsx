@@ -7,9 +7,11 @@ import { fetchMealsByPlanId, type Meal } from "@/lib/api"
 import { getMealPlanById, type UserMealPlan } from "@/lib/firebase/meal-plans"
 import { MealCard } from "@/components/meal-card"
 import { LoadingCard } from "@/components/loading-card"
+import { useAuth } from "@/contexts/auth-context"
 
 export default function MealPlanDetailPage() {
   const params = useParams()
+  const { user } = useAuth()
   const [meals, setMeals] = useState<Meal[]>([])
   const [loading, setLoading] = useState(true)
   const [planTitle, setPlanTitle] = useState<string | null>(null)
@@ -45,7 +47,27 @@ export default function MealPlanDetailPage() {
       }
     }
     loadMeals()
-  }, [params.id])
+    
+    // Reload when user changes (e.g., after login) or when plan ID changes
+    // Also reload when page becomes visible (user switches back to tab)
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        loadMeals()
+      }
+    }
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    
+    // Set up interval to refresh meals every 5 seconds (for real-time updates)
+    const interval = setInterval(() => {
+      loadMeals()
+    }, 5000)
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+      clearInterval(interval)
+    }
+  }, [params.id, user])
 
   return (
     <main className="min-h-screen py-12">

@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { Menu, X, User, LogOut, Settings, Shield } from "lucide-react"
+import { Menu, X, User, LogOut, Settings, Shield, Bookmark } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
@@ -159,6 +159,12 @@ export function Navbar() {
                         </Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem asChild>
+                        <Link href="/saved-meals" className="cursor-pointer">
+                          <Bookmark className="mr-2 h-4 w-4" />
+                          Saved Meals
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
                         <Link href="/profile" className="cursor-pointer">
                           <Settings className="mr-2 h-4 w-4" />
                           Settings
@@ -289,6 +295,14 @@ export function Navbar() {
                     >
                       <User className="mr-3 h-5 w-5" />
                       My Meal Plans
+                    </Link>
+                    <Link
+                      href="/saved-meals"
+                      className="flex items-center px-4 py-3 text-base font-medium rounded-lg transition-colors hover:bg-accent hover:text-accent-foreground focus-enhanced"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      <Bookmark className="mr-3 h-5 w-5" />
+                      Saved Meals
                     </Link>
                     <Link
                       href="/profile"
