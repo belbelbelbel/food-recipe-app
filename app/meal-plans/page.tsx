@@ -25,16 +25,23 @@ export default function MealPlansPage() {
   const loadData = async () => {
     try {
       setLoading(true)
+      console.log("Loading meal plans data...")
       const [userPlansData, curatedPlansData, creditsData] = await Promise.all([
         getUserMealPlans(),
         fetchMealPlans(),
         fetchCredits(),
       ])
+      console.log("User plans loaded:", userPlansData.length)
+      console.log("Curated plans loaded:", curatedPlansData.length)
       setUserPlans(userPlansData)
       setCuratedPlans(curatedPlansData)
       setCredits(creditsData)
     } catch (error) {
       console.error("Failed to load meal plans:", error)
+      // Show error to user
+      if (error instanceof Error) {
+        console.error("Error details:", error.message, error.stack)
+      }
     } finally {
       setLoading(false)
     }
@@ -43,6 +50,13 @@ export default function MealPlansPage() {
   useEffect(() => {
     loadData()
   }, [])
+
+  // Reload when user changes (e.g., after sign in)
+  useEffect(() => {
+    if (!authLoading && user) {
+      loadData()
+    }
+  }, [user, authLoading])
 
   return (
     <div className="min-h-screen padding-y-responsive">

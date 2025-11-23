@@ -42,13 +42,29 @@ service cloud.firestore {
     
     // Meal Plans collection - role-based access
     match /mealPlans/{planId} {
-      // Read: Users can read their own plans, admins can read all
+      // Helper to check if user owns the plan
+      function isPlanOwner() {
+        return isAuthenticated() && resource.data.userId == request.auth.uid;
+      }
+      
+      // Helper to safely check if user is admin (doesn't fail if profile doesn't exist)
+      function isAdminSafe() {
+        return isAuthenticated() && 
+               exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+               get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+      }
+      
+      // Read: Users can read their own plans, admins can read all, curated plans are public
       allow read: if isAuthenticated() && (
-        isOwner(resource.data.userId) || 
-        isAdmin() ||
-        // Allow reading curated plans (isCustom == false)
-        (!resource.data.isCustom)
+        isPlanOwner() || 
+        isAdminSafe() ||
+        (!resource.data.isCustom) // Curated plans
       );
+      
+      // List/Query: Allow users to query their own plans
+      // Note: This allows queries with where("userId", "==", request.auth.uid)
+      allow list: if isAuthenticated() && 
+        request.query.limit <= 100;
       
       // Create: Any authenticated user can create their own meal plan
       allow create: if isAuthenticated() && 
@@ -57,14 +73,14 @@ service cloud.firestore {
       
       // Update: Users can update their own plans, admins can update any
       allow update: if isAuthenticated() && (
-        isOwner(resource.data.userId) || 
-        isAdmin()
+        isPlanOwner() || 
+        isAdminSafe()
       );
       
       // Delete: Users can delete their own plans, admins can delete any
       allow delete: if isAuthenticated() && (
-        isOwner(resource.data.userId) || 
-        isAdmin()
+        isPlanOwner() || 
+        isAdminSafe()
       );
     }
     

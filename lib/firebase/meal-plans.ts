@@ -103,21 +103,36 @@ export async function getUserMealPlans(): Promise<UserMealPlan[]> {
   try {
     const userId = getCurrentUserIdWithFallback()
     if (!userId) {
+      console.log("No user ID found, returning empty array")
       return []
     }
 
-    const q = query(
-      collection(db, MEAL_PLANS_COLLECTION),
-      where("userId", "==", userId),
-      orderBy("updatedAt", "desc")
-    )
+    console.log("Fetching meal plans for user:", userId)
 
-    const querySnapshot = await getDocs(q)
+    // Try with orderBy first, but if it fails (no index), try without
+    let querySnapshot
+    try {
+      const q = query(
+        collection(db, MEAL_PLANS_COLLECTION),
+        where("userId", "==", userId),
+        orderBy("updatedAt", "desc")
+      )
+      querySnapshot = await getDocs(q)
+    } catch (orderByError: any) {
+      // If orderBy fails (likely missing index), try without it
+      console.warn("orderBy failed, trying without it:", orderByError)
+      const q = query(
+        collection(db, MEAL_PLANS_COLLECTION),
+        where("userId", "==", userId)
+      )
+      querySnapshot = await getDocs(q)
+    }
+
     const plans: UserMealPlan[] = []
 
     querySnapshot.forEach((doc) => {
       const data = doc.data()
-      plans.push({
+      const plan: UserMealPlan = {
         id: doc.id,
         userId: data.userId,
         title: data.title,
@@ -127,12 +142,29 @@ export async function getUserMealPlans(): Promise<UserMealPlan[]> {
         createdAt: data.createdAt?.toDate?.()?.toISOString() || data.createdAt || new Date().toISOString(),
         updatedAt: data.updatedAt?.toDate?.()?.toISOString() || data.updatedAt || new Date().toISOString(),
         isCustom: data.isCustom ?? true,
-      })
+      }
+      plans.push(plan)
     })
 
+    // Sort by updatedAt manually if we couldn't use orderBy
+    plans.sort((a, b) => {
+      const dateA = new Date(a.updatedAt).getTime()
+      const dateB = new Date(b.updatedAt).getTime()
+      return dateB - dateA // Descending
+    })
+
+    console.log(`Found ${plans.length} meal plans for user ${userId}`)
     return plans
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error fetching user meal plans:", error)
+    console.error("Error code:", error.code)
+    console.error("Error message:", error.message)
+    
+    // If it's a permission error, the user might not have a profile yet
+    if (error.code === "permission-denied") {
+      console.warn("Permission denied - user might need to create profile first")
+    }
+    
     // Fallback to localStorage
     return getLocalStorageMealPlans()
   }

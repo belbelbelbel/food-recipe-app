@@ -146,7 +146,7 @@ export default function HomePage() {
       <section className="py-6 sm:py-8 border-b bg-background/95 backdrop-blur-sm">
         <div className="container-responsive">
           <div className="flex flex-col gap-4 sm:gap-6">
-            <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 items-start sm:items-center justify-between">
+            <div className="flex flex-col  gap-4 sm:gap-6 items-start sm:items-center justify-between">
               <SearchBar value={searchQuery} onChange={setSearchQuery} />
               <FilterBar
                 categories={categories}
