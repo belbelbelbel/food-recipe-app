@@ -136,7 +136,7 @@ export default function MealPlansPage() {
             className="mb-6 sm:mb-8 lg:mb-12"
           >
             {credits.creditsLeft > 0 ? (
-              <Alert className="border-primary/20 bg-primary/5 p-4 sm:p-6">
+              <Alert className="border-primary/20 bg-primary/5 p-4 sm:p-6 hidden">
                 <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5 text-primary flex-shrink-0" />
                 <div className="ml-2 sm:ml-3">
                   <AlertTitle className="text-primary text-sm sm:text-base font-semibold">

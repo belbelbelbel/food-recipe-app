@@ -736,27 +736,19 @@ export async function fetchMealsByPlanId(planId: string): Promise<Meal[]> {
   // First check user's custom meal plans
   const userPlans = getUserMealPlans()
   const userPlan = userPlans.find((p) => p.id === planId)
-  if (userPlan && userPlan.meals.length > 0) {
-    return userPlan.meals
+  if (userPlan) {
+    return userPlan.meals || []
   }
 
   // Fall back to API or mock data
   try {
     const res = await fetch(`${BASE_URL}/meals?planId=${planId}`, { cache: "no-store" })
     if (!res.ok) throw new Error("Failed to fetch meals")
-    return res.json()
+    const data = await res.json()
+    return Array.isArray(data) ? data : []
   } catch (error) {
-    return (
-      MOCK_MEAL_PLANS[planId] || [
-        {
-          id: "meal1",
-          title: "Meal Not Found",
-          image: "/placeholder.svg",
-          duration: "N/A",
-          recipeId: "r1",
-        },
-      ]
-    )
+    // Return mock data if available, otherwise empty array
+    return MOCK_MEAL_PLANS[planId] || []
   }
 }
 
