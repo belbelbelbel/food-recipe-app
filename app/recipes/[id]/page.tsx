@@ -27,7 +27,6 @@ export default function RecipeDetailPage() {
           setRecipe(data)
         } catch (error) {
           console.error("Failed to load recipe:", error)
-          // Error is handled by API fallback
         } finally {
           setLoading(false)
         }
