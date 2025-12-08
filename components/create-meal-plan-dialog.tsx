@@ -87,10 +87,10 @@ export function CreateMealPlanDialog({ onSuccess, children }: CreateMealPlanDial
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[500px] p-4 sm:p-6">
         <DialogHeader>
-          <DialogTitle>Create New Meal Plan</DialogTitle>
-          <DialogDescription>
+          <DialogTitle className="text-base sm:text-lg">Create New Meal Plan</DialogTitle>
+          <DialogDescription className="text-xs sm:text-sm">
             Give your meal plan a name and optional description to get started.
           </DialogDescription>
         </DialogHeader>
@@ -98,11 +98,11 @@ export function CreateMealPlanDialog({ onSuccess, children }: CreateMealPlanDial
         {!user && !authLoading && (
           <Alert className="mt-4">
             <LogIn className="h-4 w-4" />
-            <AlertDescription>
+            <AlertDescription className="text-xs sm:text-sm">
               You must be signed in to create meal plans.{" "}
               <Button
                 variant="link"
-                className="p-0 h-auto font-semibold"
+                className="p-0 h-auto font-semibold text-xs sm:text-sm"
                 onClick={() => {
                   setOpen(false)
                   router.push("/login")
@@ -116,7 +116,7 @@ export function CreateMealPlanDialog({ onSuccess, children }: CreateMealPlanDial
 
         <form onSubmit={handleSubmit} className="space-y-4 mt-4">
           <div className="space-y-2">
-            <Label htmlFor="title">Meal Plan Name *</Label>
+            <Label htmlFor="title" className="text-sm sm:text-base">Meal Plan Name *</Label>
             <Input
               id="title"
               placeholder="e.g., My Weekly Plan, Summer Meals"
@@ -125,11 +125,12 @@ export function CreateMealPlanDialog({ onSuccess, children }: CreateMealPlanDial
               disabled={loading}
               required
               autoFocus
+              className="text-sm sm:text-base"
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="description">Description (Optional)</Label>
+            <Label htmlFor="description" className="text-sm sm:text-base">Description (Optional)</Label>
             <Textarea
               id="description"
               placeholder="Add a description for your meal plan..."
@@ -137,19 +138,21 @@ export function CreateMealPlanDialog({ onSuccess, children }: CreateMealPlanDial
               onChange={(e) => setDescription(e.target.value)}
               disabled={loading}
               rows={3}
+              className="text-sm sm:text-base"
             />
           </div>
 
-          <div className="flex justify-end gap-3 pt-4">
+          <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3 pt-4">
             <Button
               type="button"
               variant="outline"
               onClick={() => setOpen(false)}
               disabled={loading}
+              className="w-full sm:w-auto"
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={loading || !title.trim() || !user}>
+            <Button type="submit" disabled={loading || !title.trim() || !user} className="w-full sm:w-auto">
               {loading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />

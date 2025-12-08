@@ -41,9 +41,9 @@ export default function SavedMealsPage() {
 
   if (authLoading || loading) {
     return (
-      <main className="min-h-screen py-12">
-        <div className="container max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      <main className="min-h-screen py-6 sm:py-8 md:py-12">
+        <div className="container-responsive max-w-7xl">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
             {Array.from({ length: 8 }).map((_, i) => (
               <LoadingCard key={i} />
             ))}
@@ -54,24 +54,24 @@ export default function SavedMealsPage() {
   }
 
   return (
-    <main className="min-h-screen py-12">
-      <div className="container max-w-7xl mx-auto">
+    <main className="min-h-screen py-6 sm:py-8 md:py-12">
+      <div className="container-responsive max-w-7xl">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="mb-8"
+          className="mb-6 sm:mb-8"
         >
-          <h1 className="text-4xl md:text-5xl font-bold text-balance mb-4">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-balance mb-3 sm:mb-4">
             My <span className="text-primary">Saved Meals</span>
           </h1>
-          <p className="text-lg text-muted-foreground text-pretty">
+          <p className="text-sm sm:text-base md:text-lg text-muted-foreground text-pretty">
             Your favorite recipes saved for later
           </p>
         </motion.div>
 
         {savedMeals.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
             {savedMeals.map((savedMeal, index) => {
               // Ensure image is always set (use placeholder if missing)
               const imageUrl = savedMeal.recipe?.image && 
@@ -99,16 +99,16 @@ export default function SavedMealsPage() {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-center py-12 sm:py-16 lg:py-20"
+            className="text-center py-8 sm:py-12 md:py-16 lg:py-20"
           >
-            <div className="max-w-md mx-auto">
-              <Bookmark className="h-16 w-16 mx-auto mb-4 text-muted-foreground opacity-50" />
-              <h3 className="text-lg sm:text-xl font-semibold mb-2">No saved meals yet</h3>
-              <p className="text-sm sm:text-base text-muted-foreground mb-6">
+            <div className="max-w-md mx-auto px-4">
+              <Bookmark className="h-12 w-12 sm:h-16 sm:w-16 mx-auto mb-3 sm:mb-4 text-muted-foreground opacity-50" />
+              <h3 className="text-base sm:text-lg md:text-xl font-semibold mb-2">No saved meals yet</h3>
+              <p className="text-xs sm:text-sm md:text-base text-muted-foreground mb-4 sm:mb-6">
                 Start saving your favorite recipes to access them anytime!
               </p>
               <Link href="/">
-                <Button size="lg" className="rounded-full">
+                <Button size="lg" className="rounded-full w-full sm:w-auto">
                   Browse Recipes
                 </Button>
               </Link>

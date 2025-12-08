@@ -72,32 +72,32 @@ function ProfileContent() {
   }
 
   return (
-    <div className="min-h-screen padding-y-responsive">
+    <div className="min-h-screen py-6 sm:py-8 md:py-12">
       <div className="container-responsive max-w-2xl">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
         >
-          <h1 className="text-responsive-hero text-balance mb-4 sm:mb-6">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-balance mb-4 sm:mb-6">
             My <span className="text-primary">Profile</span>
           </h1>
 
-          <div className="bg-card rounded-2xl border border-border p-6 sm:p-8 shadow-sm space-y-6">
+          <div className="bg-card rounded-xl sm:rounded-2xl border border-border p-4 sm:p-6 md:p-8 shadow-sm space-y-4 sm:space-y-6">
             {/* Avatar Section */}
-            <div className="flex flex-col sm:flex-row items-center gap-6 pb-6 border-b border-border">
-              <Avatar className="h-24 w-24">
-                <AvatarFallback className="bg-primary text-primary-foreground text-2xl">
+            <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6 pb-4 sm:pb-6 border-b border-border">
+              <Avatar className="h-20 w-20 sm:h-24 sm:w-24">
+                <AvatarFallback className="bg-primary text-primary-foreground text-xl sm:text-2xl">
                   {getUserInitials()}
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1 text-center sm:text-left">
-                <h2 className="text-2xl font-bold mb-2">
+                <h2 className="text-xl sm:text-2xl font-bold mb-1 sm:mb-2">
                   {userProfile?.displayName || "User"}
                 </h2>
-                <p className="text-muted-foreground mb-3">{user?.email}</p>
+                <p className="text-xs sm:text-sm text-muted-foreground mb-2 sm:mb-3 break-all">{user?.email}</p>
                 {userProfile?.role && (
-                  <Badge variant="secondary" className="capitalize">
+                  <Badge variant="secondary" className="capitalize text-xs">
                     <Shield className="mr-1 h-3 w-3" />
                     {userProfile.role}
                   </Badge>
@@ -106,10 +106,10 @@ function ProfileContent() {
             </div>
 
             {/* Profile Form */}
-            <form onSubmit={handleSave} className="space-y-5">
+            <form onSubmit={handleSave} className="space-y-4 sm:space-y-5">
               <div className="space-y-2">
-                <Label htmlFor="displayName">
-                  <User className="inline mr-2 h-4 w-4" />
+                <Label htmlFor="displayName" className="text-sm sm:text-base">
+                  <User className="inline mr-2 h-3 w-3 sm:h-4 sm:w-4" />
                   Display Name
                 </Label>
                 <Input
@@ -119,12 +119,13 @@ function ProfileContent() {
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value)}
                   disabled={saving}
+                  className="text-sm sm:text-base"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="email">
-                  <Mail className="inline mr-2 h-4 w-4" />
+                <Label htmlFor="email" className="text-sm sm:text-base">
+                  <Mail className="inline mr-2 h-3 w-3 sm:h-4 sm:w-4" />
                   Email Address
                 </Label>
                 <Input
@@ -132,7 +133,7 @@ function ProfileContent() {
                   type="email"
                   value={user?.email || ""}
                   disabled
-                  className="bg-muted"
+                  className="bg-muted text-sm sm:text-base"
                 />
                 <p className="text-xs text-muted-foreground">
                   Email cannot be changed
@@ -141,14 +142,14 @@ function ProfileContent() {
 
               {userProfile?.role && (
                 <div className="space-y-2">
-                  <Label>
-                    <Shield className="inline mr-2 h-4 w-4" />
+                  <Label className="text-sm sm:text-base">
+                    <Shield className="inline mr-2 h-3 w-3 sm:h-4 sm:w-4" />
                     Account Role
                   </Label>
                   <Input
                     value={userProfile.role}
                     disabled
-                    className="bg-muted capitalize"
+                    className="bg-muted capitalize text-sm sm:text-base"
                   />
                   <p className="text-xs text-muted-foreground">
                     Role is managed by administrators
@@ -156,12 +157,12 @@ function ProfileContent() {
                 </div>
               )}
 
-              <div className="flex justify-end pt-4">
+              <div className="flex justify-end pt-2 sm:pt-4">
                 <Button
                   type="submit"
                   disabled={saving}
                   size="lg"
-                  className="rounded-full"
+                  className="rounded-full w-full sm:w-auto"
                 >
                   {saving ? (
                     <>

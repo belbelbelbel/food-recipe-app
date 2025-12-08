@@ -39,7 +39,12 @@ export function SaveMealButton({ recipe, variant = "button" }: SaveMealButtonPro
     }
   }
 
-  async function handleToggleSave() {
+  async function handleToggleSave(e?: React.MouseEvent) {
+    if (e) {
+      e.preventDefault()
+      e.stopPropagation()
+    }
+    
     if (!user) {
       handleError(new Error("Please sign in to save meals"), "Authentication Required")
       return

@@ -112,10 +112,10 @@ export function AddToMealPlanDialog({
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       {children && <DialogTrigger asChild>{children}</DialogTrigger>}
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl max-h-[85vh] sm:max-h-[80vh] overflow-y-auto p-4 sm:p-6">
         <DialogHeader>
-          <DialogTitle>Add to Meal Plan</DialogTitle>
-          <DialogDescription>
+          <DialogTitle className="text-base sm:text-lg">Add to Meal Plan</DialogTitle>
+          <DialogDescription className="text-xs sm:text-sm">
             Select a meal plan to add "{recipe.title}" to
           </DialogDescription>
         </DialogHeader>
@@ -123,11 +123,11 @@ export function AddToMealPlanDialog({
         {!user && !authLoading && (
           <Alert className="mt-4">
             <LogIn className="h-4 w-4" />
-            <AlertDescription>
+            <AlertDescription className="text-xs sm:text-sm">
               You must be signed in to add recipes to meal plans.{" "}
               <Button
                 variant="link"
-                className="p-0 h-auto font-semibold"
+                className="p-0 h-auto font-semibold text-xs sm:text-sm"
                 onClick={() => {
                   setOpen(false)
                   router.push("/login")
@@ -140,27 +140,27 @@ export function AddToMealPlanDialog({
         )}
 
         {loading ? (
-          <div className="flex items-center justify-center py-12">
+          <div className="flex items-center justify-center py-8 sm:py-12">
             <Loader2 className="h-6 w-6 animate-spin text-primary" />
           </div>
         ) : !user ? (
-          <div className="text-center py-12">
-            <LogIn className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-            <p className="text-muted-foreground mb-4">Please sign in to add recipes to meal plans</p>
+          <div className="text-center py-8 sm:py-12">
+            <LogIn className="h-10 w-10 sm:h-12 sm:w-12 mx-auto mb-3 sm:mb-4 text-muted-foreground" />
+            <p className="text-sm sm:text-base text-muted-foreground mb-3 sm:mb-4">Please sign in to add recipes to meal plans</p>
             <Button onClick={() => {
               setOpen(false)
               router.push("/login")
-            }}>
+            }} className="w-full sm:w-auto">
               Sign In
             </Button>
           </div>
         ) : plans.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground mb-4">No meal plans available</p>
-            <p className="text-sm text-muted-foreground">Create a meal plan first to add recipes</p>
+          <div className="text-center py-8 sm:py-12">
+            <p className="text-sm sm:text-base text-muted-foreground mb-2 sm:mb-4">No meal plans available</p>
+            <p className="text-xs sm:text-sm text-muted-foreground">Create a meal plan first to add recipes</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mt-4">
             {plans.map((plan) => {
               const isAdding = addingToPlan === plan.id
               const isUserPlan = "createdAt" in plan
@@ -170,16 +170,16 @@ export function AddToMealPlanDialog({
                   key={plan.id}
                   onClick={() => handleAddToPlan(plan.id)}
                   disabled={isAdding}
-                  className="relative group rounded-lg border border-border bg-card p-4 text-left hover:border-primary hover:bg-accent transition-all disabled:opacity-50 disabled:cursor-not-allowed focus-enhanced"
+                  className="relative group rounded-lg border border-border bg-card p-3 sm:p-4 text-left hover:border-primary hover:bg-accent transition-all disabled:opacity-50 disabled:cursor-not-allowed focus-enhanced"
                 >
-                  <div className="flex gap-4">
-                    <div className="relative w-20 h-20 flex-shrink-0 rounded-lg overflow-hidden">
+                  <div className="flex gap-3 sm:gap-4">
+                    <div className="relative w-16 h-16 sm:w-20 sm:h-20 flex-shrink-0 rounded-lg overflow-hidden">
                       <Image
                         src={plan.image || "/placeholder.svg"}
                         alt={plan.title}
                         fill
                         className="object-cover"
-                        sizes="80px"
+                        sizes="(max-width: 640px) 64px, 80px"
                       />
                     </div>
                     <div className="flex-1 min-w-0">
@@ -197,7 +197,7 @@ export function AddToMealPlanDialog({
                     </div>
                     {isAdding && (
                       <div className="absolute inset-0 flex items-center justify-center bg-background/80 rounded-lg">
-                        <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                        <Loader2 className="h-4 w-4 sm:h-5 sm:w-5 animate-spin text-primary" />
                       </div>
                     )}
                   </div>

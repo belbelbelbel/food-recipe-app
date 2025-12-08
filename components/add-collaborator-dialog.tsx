@@ -155,10 +155,10 @@ export function AddCollaboratorDialog({ plan, onSuccess, children }: AddCollabor
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[500px] p-4 sm:p-6 max-h-[85vh] sm:max-h-[80vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Manage Collaborators</DialogTitle>
-          <DialogDescription>
+          <DialogTitle className="text-base sm:text-lg">Manage Collaborators</DialogTitle>
+          <DialogDescription className="text-xs sm:text-sm">
             Add people to collaborate on "{plan.title}". They'll be able to view and add meals to this plan.
           </DialogDescription>
         </DialogHeader>
@@ -167,19 +167,19 @@ export function AddCollaboratorDialog({ plan, onSuccess, children }: AddCollabor
           {/* Search */}
           <div className="space-y-2">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
               <Input
                 placeholder="Search by email or name..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9"
+                className="pl-8 sm:pl-9 text-sm sm:text-base"
               />
             </div>
 
             {/* Search Results */}
             {searching && (
-              <div className="flex items-center justify-center py-4">
-                <Loader2 className="h-5 w-5 animate-spin text-primary" />
+              <div className="flex items-center justify-center py-3 sm:py-4">
+                <Loader2 className="h-4 w-4 sm:h-5 sm:w-5 animate-spin text-primary" />
               </div>
             )}
 
@@ -188,16 +188,16 @@ export function AddCollaboratorDialog({ plan, onSuccess, children }: AddCollabor
                 {searchResults.map((user) => (
                   <div
                     key={user.uid}
-                    className="flex items-center justify-between p-2 hover:bg-accent rounded-lg"
+                    className="flex items-center justify-between p-2 sm:p-3 hover:bg-accent rounded-lg gap-2"
                   >
-                    <div className="flex items-center gap-3">
-                      <Avatar className="h-8 w-8">
-                        <AvatarFallback>{getInitials(user.email, user.displayName)}</AvatarFallback>
+                    <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+                      <Avatar className="h-7 w-7 sm:h-8 sm:w-8 flex-shrink-0">
+                        <AvatarFallback className="text-xs">{getInitials(user.email, user.displayName)}</AvatarFallback>
                       </Avatar>
-                      <div>
-                        <p className="text-sm font-medium">{user.displayName || user.email}</p>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs sm:text-sm font-medium truncate">{user.displayName || user.email}</p>
                         {user.displayName && (
-                          <p className="text-xs text-muted-foreground">{user.email}</p>
+                          <p className="text-xs text-muted-foreground truncate">{user.email}</p>
                         )}
                       </div>
                     </div>
@@ -205,11 +205,12 @@ export function AddCollaboratorDialog({ plan, onSuccess, children }: AddCollabor
                       size="sm"
                       onClick={() => handleAddCollaborator(user.uid)}
                       disabled={adding === user.uid}
+                      className="flex-shrink-0 h-7 w-7 sm:h-8 sm:w-8 p-0"
                     >
                       {adding === user.uid ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <Loader2 className="h-3 w-3 sm:h-4 sm:w-4 animate-spin" />
                       ) : (
-                        <UserPlus className="h-4 w-4" />
+                        <UserPlus className="h-3 w-3 sm:h-4 sm:w-4" />
                       )}
                     </Button>
                   </div>
@@ -218,7 +219,7 @@ export function AddCollaboratorDialog({ plan, onSuccess, children }: AddCollabor
             )}
 
             {!searching && searchQuery.length >= 2 && searchResults.length === 0 && (
-              <p className="text-sm text-muted-foreground text-center py-4">
+              <p className="text-xs sm:text-sm text-muted-foreground text-center py-3 sm:py-4">
                 No users found
               </p>
             )}
@@ -226,26 +227,26 @@ export function AddCollaboratorDialog({ plan, onSuccess, children }: AddCollabor
 
           {/* Current Collaborators */}
           {loading ? (
-            <div className="flex items-center justify-center py-4">
-              <Loader2 className="h-5 w-5 animate-spin text-primary" />
+            <div className="flex items-center justify-center py-3 sm:py-4">
+              <Loader2 className="h-4 w-4 sm:h-5 sm:w-5 animate-spin text-primary" />
             </div>
           ) : collaborators.length > 0 ? (
             <div className="space-y-2">
-              <h4 className="text-sm font-semibold">Collaborators</h4>
+              <h4 className="text-xs sm:text-sm font-semibold">Collaborators</h4>
               <div className="space-y-2">
                 {collaborators.map((collab) => (
                   <div
                     key={collab.uid}
-                    className="flex items-center justify-between p-2 border rounded-lg"
+                    className="flex items-center justify-between p-2 sm:p-3 border rounded-lg gap-2"
                   >
-                    <div className="flex items-center gap-3">
-                      <Avatar className="h-8 w-8">
-                        <AvatarFallback>{getInitials(collab.email, collab.displayName)}</AvatarFallback>
+                    <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+                      <Avatar className="h-7 w-7 sm:h-8 sm:w-8 flex-shrink-0">
+                        <AvatarFallback className="text-xs">{getInitials(collab.email, collab.displayName)}</AvatarFallback>
                       </Avatar>
-                      <div>
-                        <p className="text-sm font-medium">{collab.displayName || collab.email}</p>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs sm:text-sm font-medium truncate">{collab.displayName || collab.email}</p>
                         {collab.displayName && (
-                          <p className="text-xs text-muted-foreground">{collab.email}</p>
+                          <p className="text-xs text-muted-foreground truncate">{collab.email}</p>
                         )}
                       </div>
                     </div>
@@ -254,11 +255,12 @@ export function AddCollaboratorDialog({ plan, onSuccess, children }: AddCollabor
                       variant="ghost"
                       onClick={() => handleRemoveCollaborator(collab.uid)}
                       disabled={removing === collab.uid}
+                      className="flex-shrink-0 h-7 w-7 sm:h-8 sm:w-8 p-0"
                     >
                       {removing === collab.uid ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <Loader2 className="h-3 w-3 sm:h-4 sm:w-4 animate-spin" />
                       ) : (
-                        <X className="h-4 w-4" />
+                        <X className="h-3 w-3 sm:h-4 sm:w-4" />
                       )}
                     </Button>
                   </div>
@@ -266,7 +268,7 @@ export function AddCollaboratorDialog({ plan, onSuccess, children }: AddCollabor
               </div>
             </div>
           ) : (
-            <p className="text-sm text-muted-foreground text-center py-4">
+            <p className="text-xs sm:text-sm text-muted-foreground text-center py-3 sm:py-4">
               No collaborators yet. Search for users to add them.
             </p>
           )}

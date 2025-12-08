@@ -70,10 +70,10 @@ export default function MealPlanDetailPage() {
   }, [params.id, user])
 
   return (
-    <main className="min-h-screen py-12">
-      <div className="container max-w-7xl mx-auto">
+    <main className="min-h-screen py-6 sm:py-8 md:py-12">
+      <div className="container-responsive max-w-7xl">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
-          <h1 className="text-4xl md:text-5xl font-bold text-balance mb-4">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-balance mb-3 sm:mb-4">
             {planTitle ? (
               <>
                 <span className="text-primary">{planTitle}</span>
@@ -84,7 +84,7 @@ export default function MealPlanDetailPage() {
               </>
             )}
           </h1>
-          <p className="text-lg text-muted-foreground text-pretty mb-12">
+          <p className="text-sm sm:text-base md:text-lg text-muted-foreground text-pretty mb-8 sm:mb-10 md:mb-12">
             {meals.length > 0 
               ? "Here are the delicious meals planned for your week"
               : "This meal plan is empty. Add recipes to get started!"}
@@ -92,13 +92,13 @@ export default function MealPlanDetailPage() {
         </motion.div>
 
         {loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
             {Array.from({ length: 4 }).map((_, i) => (
               <LoadingCard key={i} />
             ))}
           </div>
         ) : meals.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
             {meals.map((meal, index) => (
               <MealCard key={meal.id} meal={meal} index={index} />
             ))}
@@ -107,12 +107,12 @@ export default function MealPlanDetailPage() {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-center py-12 sm:py-16 lg:py-20"
+            className="text-center py-8 sm:py-12 md:py-16 lg:py-20"
           >
-            <div className="max-w-md mx-auto">
-              <div className="text-6xl sm:text-8xl mb-4 opacity-20">🍽️</div>
-              <h3 className="text-lg sm:text-xl font-semibold mb-2">No meals in this plan yet</h3>
-              <p className="text-sm sm:text-base text-muted-foreground mb-6">
+            <div className="max-w-md mx-auto px-4">
+              <div className="text-5xl sm:text-6xl md:text-8xl mb-3 sm:mb-4 opacity-20">🍽️</div>
+              <h3 className="text-base sm:text-lg md:text-xl font-semibold mb-2">No meals in this plan yet</h3>
+              <p className="text-xs sm:text-sm md:text-base text-muted-foreground mb-6">
                 Start adding recipes to build your meal plan!
               </p>
             </div>
