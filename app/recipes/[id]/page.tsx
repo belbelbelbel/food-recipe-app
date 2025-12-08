@@ -40,7 +40,7 @@ export default function RecipeDetailPage() {
       <main className="min-h-screen py-6 sm:py-8 md:py-12">
         <div className="container-responsive max-w-7xl">
           <div className="space-y-6 sm:space-y-8">
-            <div className="aspect-[4/3] sm:aspect-[16/9] bg-muted rounded-xl sm:rounded-2xl md:rounded-3xl animate-pulse" />
+            <div className="aspect-[4/3] sm:aspect-[3/2] bg-muted rounded-xl sm:rounded-2xl md:rounded-3xl animate-pulse max-w-4xl mx-auto" />
             <div className="space-y-4">
               <div className="h-8 sm:h-10 bg-muted rounded animate-pulse w-3/4" />
               <div className="h-5 sm:h-6 bg-muted rounded animate-pulse w-1/2" />
@@ -66,8 +66,17 @@ export default function RecipeDetailPage() {
       <div className="container-responsive max-w-7xl">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
           {/* Hero Image */}
-          <div className="relative aspect-[4/3] sm:aspect-[16/9] overflow-hidden rounded-xl sm:rounded-2xl md:rounded-3xl mb-6 sm:mb-8 shadow-sm">
-            <Image src={recipe.image || "/placeholder.svg"} alt={recipe.title} fill className="object-cover" priority />
+          <div className="relative w-full max-w-4xl mx-auto mb-6 sm:mb-8">
+            <div className="relative aspect-[4/3] sm:aspect-[3/2] overflow-hidden rounded-xl sm:rounded-2xl md:rounded-3xl shadow-sm">
+              <Image 
+                src={recipe.image || "/placeholder.svg"} 
+                alt={recipe.title} 
+                fill 
+                className="object-cover" 
+                priority
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 90vw, 896px"
+              />
+            </div>
           </div>
 
           {/* Recipe Header */}
