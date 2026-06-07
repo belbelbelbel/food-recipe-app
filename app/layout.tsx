@@ -7,6 +7,8 @@ import "./globals.css"
 import { Navbar } from "@/components/navbar"
 import { ErrorBoundaryWrapper } from "@/components/error-boundary-wrapper"
 import { AuthProvider } from "@/contexts/auth-context"
+import { MotionProvider } from "@/components/motion/motion-provider"
+import { SavedMealsProvider } from "@/contexts/saved-meals-context"
 import { Toaster } from "@/components/ui/toaster"
 import { Suspense } from "react"
 
@@ -44,6 +46,8 @@ export default function RootLayout({
       </head>
       <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable} antialiased min-h-screen bg-background text-foreground overflow-x-hidden`}>
         <AuthProvider>
+          <MotionProvider>
+          <SavedMealsProvider>
           <div className="flex min-h-screen flex-col">
             <ErrorBoundaryWrapper>
               <Suspense fallback={
@@ -60,6 +64,8 @@ export default function RootLayout({
           </div>
           <Toaster />
           <Analytics />
+          </SavedMealsProvider>
+          </MotionProvider>
         </AuthProvider>
       </body>
     </html>

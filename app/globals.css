@@ -165,6 +165,17 @@
   .grid-responsive-large {
     @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8;
   }
+
+  /* Sweetgreen-style cinematic recipe grid */
+  .grid-cinematic {
+    @apply grid grid-cols-1 gap-10 sm:grid-cols-2 sm:gap-8 lg:grid-cols-3 lg:gap-12;
+  }
+
+  /* Editorial serif for category + card titles */
+  .font-editorial {
+    font-family: var(--font-geist-sans), ui-serif, Georgia, "Times New Roman", serif;
+    font-feature-settings: "liga" 1, "kern" 1;
+  }
   
   /* Responsive text utilities */
   .text-responsive-hero {
@@ -210,5 +221,64 @@
   
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
+  }
+
+  /* Shimmer loading animation */
+  .shimmer {
+    background: linear-gradient(
+      90deg,
+      oklch(0.95 0 0) 0%,
+      oklch(0.97 0.01 35) 50%,
+      oklch(0.95 0 0) 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.5s ease-in-out infinite;
+  }
+
+  /* Subtle glass — used sparingly on hero search + recipe panels */
+  .glass-panel {
+    background: oklch(1 0 0 / 0.72);
+    backdrop-filter: blur(20px) saturate(1.2);
+    -webkit-backdrop-filter: blur(20px) saturate(1.2);
+    border: 1px solid oklch(1 0 0 / 0.5);
+    box-shadow: 0 4px 24px oklch(0 0 0 / 0.06);
+  }
+
+  .glass-panel-dark {
+    background: oklch(0 0 0 / 0.35);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid oklch(1 0 0 / 0.12);
+  }
+
+  .dark .glass-panel {
+    background: oklch(0.2 0 0 / 0.75);
+    border-color: oklch(1 0 0 / 0.08);
+    box-shadow: 0 4px 24px oklch(0 0 0 / 0.2);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .shimmer {
+    animation: none;
+    background: oklch(0.95 0 0);
   }
 }

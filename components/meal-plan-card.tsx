@@ -8,6 +8,7 @@ import type { MealPlan } from "@/lib/api"
 import type { UserMealPlan } from "@/lib/firebase/meal-plans"
 import { MealPlanMenu } from "./meal-plan-menu"
 import { formatDistanceToNow } from "date-fns"
+import { duration, easeOut } from "@/lib/motion"
 
 interface MealPlanCardProps {
   plan: MealPlan | UserMealPlan
@@ -21,88 +22,71 @@ export function MealPlanCard({ plan, index, onUpdate }: MealPlanCardProps) {
   const lastUpdated = "updatedAt" in plan ? plan.updatedAt : null
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
+    <motion.article
+      initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, delay: Math.min(index * 0.1, 0.5) }}
-      whileHover={{ scale: 1.02 }}
-      whileTap={{ scale: 0.98 }}
-      className="group w-full relative"
+      transition={{ duration: duration.normal, ease: easeOut, delay: Math.min(index * 0.04, 0.2) }}
+      className="group relative w-full"
     >
-      {/* Menu Button - Only for user plans - Always visible */}
       {isUserPlan && (
-        <div 
-          className="absolute top-2 right-2 z-30"
-        >
+        <div className="absolute right-2 top-2 z-30">
           <MealPlanMenu plan={plan as UserMealPlan} onUpdate={onUpdate} />
         </div>
       )}
 
-      <Link href={`/meal-plans/${plan.id}`} className="focus-enhanced rounded-2xl">
-        <div className="overflow-hidden rounded-2xl bg-card shadow-sm hover:shadow-lg transition-all duration-300 h-full flex flex-col">
-          {/* Image Container */}
-          <div className="relative aspect-[4/3] sm:aspect-[3/2] md:aspect-[4/3] overflow-hidden">
+      <Link href={`/meal-plans/${plan.id}`} className="focus-enhanced block rounded-2xl">
+        <div className="flex h-full flex-col overflow-hidden rounded-2xl bg-card shadow-sm transition-[transform,box-shadow] duration-300 group-hover:-translate-y-1 group-hover:shadow-md">
+          <div className="relative aspect-[4/3] overflow-hidden sm:aspect-[3/2]">
             <Image
               src={plan.image || "/placeholder.svg"}
               alt={plan.title}
               fill
-              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 50vw, 33vw"
-              className="object-cover transition-transform duration-300 group-hover:scale-105"
-              priority={index < 3} // Prioritize loading for first 3 images
+              sizes="(max-width: 640px) 100vw, 33vw"
+              className="object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+              priority={index < 3}
             />
-            
-            {/* Recommended Badge */}
+
             {plan.recommended && (
-              <div className="absolute top-2 right-2 sm:top-3 sm:right-3">
-                <div className="rounded-full bg-primary/90 backdrop-blur-sm px-2 py-1 sm:px-3 sm:py-1 text-xs font-medium text-primary-foreground flex items-center gap-1 border border-primary-foreground/10">
-                  <Star className="h-3 w-3 fill-current flex-shrink-0" />
-                  <span className="hidden sm:inline">Recommended</span>
-                  <span className="sm:hidden">★</span>
-                </div>
+              <div className="absolute right-2 top-2 sm:right-3 sm:top-3">
+                <span className="inline-flex items-center gap-1 rounded-full bg-primary px-2 py-0.5 text-xs font-medium text-primary-foreground sm:px-3 sm:py-1">
+                  <Star className="h-3 w-3 fill-current" />
+                  Recommended
+                </span>
               </div>
             )}
 
-            {/* User Plan Badge */}
             {isUserPlan && (
-              <div className="absolute top-2 left-2 sm:top-3 sm:left-3">
-                <div className="rounded-full bg-secondary/90 backdrop-blur-sm px-2 py-1 sm:px-3 sm:py-1 text-xs font-medium text-secondary-foreground border border-secondary-foreground/10">
-                  Your Plan
-                </div>
+              <div className="absolute left-2 top-2 sm:left-3 sm:top-3">
+                <span className="rounded-full bg-background/90 px-2 py-0.5 text-xs font-medium backdrop-blur-sm sm:px-3 sm:py-1">
+                  Your plan
+                </span>
               </div>
             )}
           </div>
-          
-          {/* Content Container */}
-          <div className="p-3 sm:p-4 md:p-5 flex-1 flex flex-col">
-            <div className="flex-1">
-              <h3 className="text-base sm:text-lg md:text-xl lg:text-2xl font-semibold text-balance mb-2 sm:mb-3 group-hover:text-primary transition-colors line-clamp-2 leading-tight">
-                {plan.title}
-              </h3>
-              <p className="text-xs sm:text-sm text-muted-foreground text-pretty line-clamp-2 leading-relaxed mb-3">
-                {plan.description}
-              </p>
-            </div>
 
-            {/* Stats */}
-            <div className="flex items-center gap-4 text-xs sm:text-sm text-muted-foreground mt-auto pt-2 border-t border-border">
+          <div className="flex flex-1 flex-col p-3 sm:p-4 md:p-5">
+            <h3 className="mb-2 line-clamp-2 text-base font-semibold leading-tight group-hover:text-primary sm:text-lg md:text-xl">
+              {plan.title}
+            </h3>
+            <p className="mb-3 line-clamp-2 text-xs text-muted-foreground sm:text-sm">{plan.description}</p>
+
+            <div className="mt-auto flex items-center gap-4 border-t border-border pt-3 text-xs text-muted-foreground sm:text-sm">
               {mealCount > 0 && (
-                <div className="flex items-center gap-1.5">
-                  <UtensilsCrossed className="h-3 w-3 sm:h-4 sm:w-4" />
-                  <span>{mealCount} meal{mealCount !== 1 ? "s" : ""}</span>
-                </div>
+                <span className="flex items-center gap-1.5">
+                  <UtensilsCrossed className="h-3.5 w-3.5" />
+                  {mealCount} meal{mealCount !== 1 ? "s" : ""}
+                </span>
               )}
               {lastUpdated && (
-                <div className="flex items-center gap-1.5">
-                  <Calendar className="h-3 w-3 sm:h-4 sm:w-4" />
-                  <span>
-                    {formatDistanceToNow(new Date(lastUpdated), { addSuffix: true })}
-                  </span>
-                </div>
+                <span className="flex items-center gap-1.5">
+                  <Calendar className="h-3.5 w-3.5" />
+                  {formatDistanceToNow(new Date(lastUpdated), { addSuffix: true })}
+                </span>
               )}
             </div>
           </div>
         </div>
       </Link>
-    </motion.div>
+    </motion.article>
   )
 }

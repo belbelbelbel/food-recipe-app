@@ -1,14 +1,16 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useRef, useCallback } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { motion } from "framer-motion"
-import { Clock } from "lucide-react"
+import { ArrowRight, Clock } from "lucide-react"
 import type { Recipe, RecipeDetail } from "@/lib/api"
 import { AddToMealPlanButton } from "./add-to-meal-plan-button"
 import { SaveMealButton } from "./save-meal-button"
 import { fetchRecipeById } from "@/lib/api"
+import { useRecipeTransition } from "@/components/motion/motion-provider"
+import { duration, easeOut } from "@/lib/motion"
 
 interface RecipeCardProps {
   recipe: Recipe
@@ -16,101 +18,115 @@ interface RecipeCardProps {
 }
 
 export function RecipeCard({ recipe, index }: RecipeCardProps) {
+  const { startTransition, activeTransition } = useRecipeTransition()
+  const imageRef = useRef<HTMLDivElement>(null)
   const [imageLoaded, setImageLoaded] = useState(false)
   const [recipeDetail, setRecipeDetail] = useState<RecipeDetail | null>(null)
+  const [fetchStarted, setFetchStarted] = useState(false)
 
-  // Load recipe details for save button
-  useEffect(() => {
-    const loadDetails = async () => {
-      try {
-        const detail = await fetchRecipeById(recipe.id)
-        setRecipeDetail(detail)
-      } catch (error) {
-        // Silently fail - save button just won't show
-        console.error("Failed to load recipe details:", error)
-      }
+  const isFlying =
+    activeTransition?.recipeId === recipe.id && activeTransition !== null
+
+  const imageSrc =
+    recipe.image && recipe.image.trim() !== "" && recipe.image !== "null"
+      ? recipe.image
+      : "/placeholder.svg"
+
+  const loadDetailsOnHover = useCallback(async () => {
+    if (fetchStarted) return
+    setFetchStarted(true)
+    try {
+      const detail = await fetchRecipeById(recipe.id)
+      setRecipeDetail(detail)
+    } catch (error) {
+      console.error("Failed to load recipe details:", error)
     }
-    loadDetails()
-  }, [recipe.id])
+  }, [recipe.id, fetchStarted])
+
+  const handleClick = (e: React.MouseEvent) => {
+    e.preventDefault()
+    if (!imageRef.current) return
+
+    const rect = imageRef.current.getBoundingClientRect()
+    startTransition({
+      recipeId: recipe.id,
+      rect: {
+        top: rect.top,
+        left: rect.left,
+        width: rect.width,
+        height: rect.height,
+      },
+      imageSrc,
+      title: recipe.title,
+    })
+  }
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, delay: Math.min(index * 0.1, 0.5) }}
-      whileHover={{ scale: 1.02 }}
-      whileTap={{ scale: 0.98 }}
-      className="group w-full relative"
+    <motion.article
+      layout
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{
+        layout: { duration: 0.45, ease: easeOut },
+        opacity: { duration: duration.normal },
+      }}
+      onMouseEnter={loadDetailsOnHover}
+      className="group w-full"
     >
-      <Link href={`/recipes/${recipe.id}`} className="focus-enhanced rounded-2xl block h-full">
-        <div className="overflow-hidden rounded-2xl bg-card shadow-sm hover:shadow-lg transition-all duration-300 h-full flex flex-col cursor-pointer">
-          {/* Image Container */}
-          <div className="relative aspect-square sm:aspect-[4/3] md:aspect-square overflow-hidden">
-            {!imageLoaded && (
-              <div className="absolute inset-0 bg-muted animate-pulse" />
-            )}
+      <Link
+        href={`/recipes/${recipe.id}`}
+        onClick={handleClick}
+        className="focus-enhanced block"
+      >
+        <div
+          ref={imageRef}
+          className="relative mb-4 aspect-square overflow-hidden rounded-3xl bg-[#f4f1ec] shadow-sm transition-shadow duration-500 ease-out group-hover:shadow-xl"
+        >
+          {!imageLoaded && !isFlying && <div className="absolute inset-0 shimmer" />}
+          <motion.div
+            animate={{ opacity: isFlying ? 0 : imageLoaded ? 1 : 0 }}
+            transition={{ duration: 0.15 }}
+            className="absolute inset-0"
+          >
             <Image
-              src={(recipe.image && recipe.image.trim() !== "" && recipe.image !== "null") 
-                ? recipe.image 
-                : "/placeholder.svg"}
+              src={imageSrc}
               alt={recipe.title || "Recipe"}
               fill
-              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 25vw"
-              className={`object-cover transition-all duration-300 group-hover:scale-105 ${
-                imageLoaded ? "opacity-100" : "opacity-0"
-              }`}
-              priority={index < 6} // Prioritize first 6 images
-              loading={index < 6 ? "eager" : "lazy"}
+              sizes="(max-width: 768px) 100vw, 33vw"
+              className="object-cover transition-transform duration-[900ms] ease-out group-hover:scale-110"
+              priority={index < 3}
+              loading={index < 3 ? "eager" : "lazy"}
               onLoad={() => setImageLoaded(true)}
-              quality={85}
+              quality={90}
             />
-            
-            {/* Category Badge */}
-            <div className="absolute top-2 right-2 sm:top-3 sm:right-3 z-10">
-              <div className="rounded-full bg-secondary/90 backdrop-blur-sm px-2 py-1 sm:px-3 sm:py-1 text-xs font-medium text-secondary-foreground border border-secondary-foreground/10">
-                {recipe.category}
-              </div>
-            </div>
+          </motion.div>
 
-            {/* Action Buttons - Top Left (Desktop) */}
-            <div 
-              className="absolute top-2 left-2 sm:top-3 sm:left-3 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 hidden sm:flex gap-2"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <AddToMealPlanButton recipe={recipe} variant="icon" />
-              {recipeDetail && (
-                <SaveMealButton recipe={recipeDetail} variant="icon" />
-              )}
-            </div>
+          <div
+            className="absolute right-3 top-3 z-10 flex gap-1.5 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <AddToMealPlanButton recipe={recipe} variant="icon" />
+            {recipeDetail && <SaveMealButton recipe={recipeDetail} variant="icon" />}
           </div>
-          
-          {/* Content Container */}
-          <div className="p-3 sm:p-4 md:p-5 flex-1 flex flex-col justify-between relative">
-            <div>
-              <h3 className="text-base sm:text-lg md:text-xl font-semibold text-balance mb-2 sm:mb-3 group-hover:text-primary transition-colors line-clamp-2 leading-tight">
-                {recipe.title}
-              </h3>
-            </div>
-            
-            {/* Duration */}
-            <div className="flex items-center gap-1.5 text-xs sm:text-sm text-muted-foreground mt-auto">
-              <Clock className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
-              <span className="truncate">{recipe.duration}</span>
-            </div>
+        </div>
 
-            {/* Action Buttons - Bottom (Mobile) */}
-            <div 
-              className="mt-3 sm:hidden flex gap-2"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <AddToMealPlanButton recipe={recipe} variant="button" />
-              {recipeDetail && (
-                <SaveMealButton recipe={recipeDetail} variant="button" />
-              )}
-            </div>
+        <div className="space-y-2 px-1">
+          <h3 className="font-editorial text-lg font-medium uppercase tracking-wide text-foreground transition-colors duration-300 group-hover:text-primary sm:text-xl">
+            {recipe.title}
+          </h3>
+          <div className="flex items-center justify-between gap-2">
+            <span className="flex items-center gap-1.5 text-xs text-muted-foreground sm:text-sm">
+              <Clock className="h-3.5 w-3.5" />
+              {recipe.duration}
+            </span>
+            <span className="flex items-center gap-1 text-xs font-medium text-foreground transition-transform duration-300 group-hover:translate-x-0.5 sm:text-sm">
+              View recipe
+              <ArrowRight className="h-3.5 w-3.5" />
+            </span>
           </div>
         </div>
       </Link>
-    </motion.div>
+    </motion.article>
   )
 }

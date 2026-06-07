@@ -3,7 +3,8 @@
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { Menu, X, User, LogOut, Settings, Shield, Bookmark } from "lucide-react"
+import { Menu, X, User, LogOut, Settings, Shield, Heart } from "lucide-react"
+import { motion, AnimatePresence } from "framer-motion"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
@@ -17,7 +18,16 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { useIsMobile } from "@/hooks/use-mobile"
 import { useAuth } from "@/contexts/auth-context"
+import { useSavedMeals } from "@/contexts/saved-meals-context"
 import { handleError, showSuccess } from "@/lib/error-handler"
+
+function useSavedMealsSafe() {
+  try {
+    return useSavedMeals()
+  } catch {
+    return { savedCount: 0 }
+  }
+}
 
 // Safe auth hook that doesn't throw if provider isn't available
 function useAuthSafe() {
@@ -40,7 +50,17 @@ export function Navbar() {
   const router = useRouter()
   const isMobile = useIsMobile()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [scrolled, setScrolled] = useState(false)
   const { user, userProfile, loading, signOut } = useAuthSafe()
+  const savedMeals = useSavedMealsSafe()
+  const isHome = pathname === "/"
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 48)
+    onScroll()
+    window.addEventListener("scroll", onScroll, { passive: true })
+    return () => window.removeEventListener("scroll", onScroll)
+  }, [])
 
   const links = [
     { href: "/", label: "Home" },
@@ -91,12 +111,19 @@ export function Navbar() {
 
   return (
     <>
-      <nav className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <nav
+        className={cn(
+          "sticky top-0 z-50 w-full transition-[background-color,border-color,box-shadow] duration-500",
+          isHome && !scrolled
+            ? "border-transparent bg-[#faf8f5]/70 backdrop-blur-md"
+            : "border-b border-border/40 bg-background/95 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-background/80"
+        )}
+      >
         <div className="container-responsive flex h-14 sm:h-16 items-center justify-between">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2 focus-enhanced rounded-md p-1">
-            <span className="text-xl sm:text-2xl font-bold">
-              FLAV<span className="text-primary">ORIZ</span>
+          <Link href="/" className="focus-enhanced rounded-md p-1">
+            <span className="font-editorial text-xl font-medium tracking-tight text-foreground sm:text-2xl">
+              flavoriz
             </span>
           </Link>
 
@@ -107,13 +134,36 @@ export function Navbar() {
                 key={link.href}
                 href={link.href}
                 className={cn(
-                  "text-sm font-medium transition-colors hover:text-primary focus-enhanced rounded-md px-3 py-2",
+                  "text-[11px] font-semibold uppercase tracking-[0.15em] transition-colors hover:text-primary focus-enhanced rounded-md px-3 py-2",
                   pathname === link.href ? "text-foreground" : "text-muted-foreground",
                 )}
               >
                 {link.label}
               </Link>
             ))}
+
+            {/* Saved Meals link with count badge */}
+            {user && savedMeals.savedCount > 0 && (
+              <Link
+                href="/saved-meals"
+                className="relative flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-primary transition-colors focus-enhanced rounded-md px-2 py-1"
+              >
+                <Heart className="h-4 w-4 text-primary fill-primary" />
+                <AnimatePresence mode="popLayout">
+                  <motion.span
+                    key={savedMeals.savedCount}
+                    layout
+                    initial={{ scale: 0.5, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    exit={{ scale: 0.5, opacity: 0 }}
+                    transition={{ type: "spring", stiffness: 500, damping: 25 }}
+                    className="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1 rounded-full bg-primary text-primary-foreground text-xs font-semibold"
+                  >
+                    {savedMeals.savedCount}
+                  </motion.span>
+                </AnimatePresence>
+              </Link>
+            )}
 
             {/* Auth Buttons / User Menu */}
             {!loading && (
@@ -160,8 +210,13 @@ export function Navbar() {
                       </DropdownMenuItem>
                       <DropdownMenuItem asChild>
                         <Link href="/saved-meals" className="cursor-pointer">
-                          <Bookmark className="mr-2 h-4 w-4" />
+                          <Heart className="mr-2 h-4 w-4" />
                           Saved Meals
+                          {savedMeals.savedCount > 0 && (
+                            <span className="ml-auto text-xs bg-primary text-primary-foreground rounded-full px-1.5 py-0.5">
+                              {savedMeals.savedCount}
+                            </span>
+                          )}
                         </Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem asChild>
@@ -301,8 +356,13 @@ export function Navbar() {
                       className="flex items-center px-4 py-3 text-base font-medium rounded-lg transition-colors hover:bg-accent hover:text-accent-foreground focus-enhanced"
                       onClick={() => setIsMobileMenuOpen(false)}
                     >
-                      <Bookmark className="mr-3 h-5 w-5" />
+                      <Heart className="mr-3 h-5 w-5" />
                       Saved Meals
+                      {savedMeals.savedCount > 0 && (
+                        <span className="ml-auto text-xs bg-primary text-primary-foreground rounded-full px-2 py-0.5">
+                          {savedMeals.savedCount}
+                        </span>
+                      )}
                     </Link>
                     <Link
                       href="/profile"

@@ -1,11 +1,13 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Bookmark, BookmarkCheck, Loader2 } from "lucide-react"
+import { Heart, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { saveMeal, unsaveMeal, isMealSaved } from "@/lib/firebase/saved-meals"
-import { handleError, showSuccess } from "@/lib/error-handler"
+import { handleError } from "@/lib/error-handler"
 import { useAuth } from "@/contexts/auth-context"
+import { useSavedMeals } from "@/contexts/saved-meals-context"
+import { SaveCelebration } from "@/components/save-celebration"
 import type { RecipeDetail } from "@/lib/api"
 
 interface SaveMealButtonProps {
@@ -15,9 +17,11 @@ interface SaveMealButtonProps {
 
 export function SaveMealButton({ recipe, variant = "button" }: SaveMealButtonProps) {
   const { user } = useAuth()
+  const { incrementCount, decrementCount } = useSavedMeals()
   const [saved, setSaved] = useState(false)
   const [loading, setLoading] = useState(false)
   const [checking, setChecking] = useState(true)
+  const [celebrating, setCelebrating] = useState(false)
 
   useEffect(() => {
     if (user) {
@@ -44,7 +48,7 @@ export function SaveMealButton({ recipe, variant = "button" }: SaveMealButtonPro
       e.preventDefault()
       e.stopPropagation()
     }
-    
+
     if (!user) {
       handleError(new Error("Please sign in to save meals"), "Authentication Required")
       return
@@ -55,11 +59,12 @@ export function SaveMealButton({ recipe, variant = "button" }: SaveMealButtonPro
       if (saved) {
         await unsaveMeal(recipe.id)
         setSaved(false)
-        showSuccess("Meal removed from saved", "Success")
+        decrementCount()
       } else {
         await saveMeal(recipe)
         setSaved(true)
-        showSuccess("Meal saved!", "Success")
+        incrementCount()
+        setCelebrating(true)
       }
     } catch (error) {
       handleError(error, saved ? "Failed to unsave meal" : "Failed to save meal")
@@ -74,49 +79,55 @@ export function SaveMealButton({ recipe, variant = "button" }: SaveMealButtonPro
 
   if (variant === "icon") {
     return (
-      <Button
-        size="sm"
-        variant="ghost"
-        className="h-8 w-8 p-0"
-        onClick={handleToggleSave}
-        disabled={loading || checking}
-        aria-label={saved ? "Unsave meal" : "Save meal"}
-      >
-        {checking || loading ? (
-          <Loader2 className="h-4 w-4 animate-spin" />
-        ) : saved ? (
-          <BookmarkCheck className="h-4 w-4 text-primary fill-primary" />
-        ) : (
-          <Bookmark className="h-4 w-4" />
-        )}
-      </Button>
+      <div className="relative">
+        <Button
+          size="sm"
+          variant="ghost"
+          className="h-8 w-8 p-0 bg-background/80 backdrop-blur-sm hover:bg-background"
+          onClick={handleToggleSave}
+          disabled={loading || checking}
+          aria-label={saved ? "Unsave meal" : "Save meal"}
+        >
+          {checking || loading ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Heart
+              className={`h-4 w-4 transition-colors ${saved ? "text-primary fill-primary" : ""}`}
+            />
+          )}
+        </Button>
+        <SaveCelebration show={celebrating} onComplete={() => setCelebrating(false)} />
+      </div>
     )
   }
 
   return (
-    <Button
-      size="sm"
-      variant={saved ? "default" : "outline"}
-      onClick={handleToggleSave}
-      disabled={loading || checking}
-    >
-      {loading || checking ? (
-        <>
-          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          {checking ? "Checking..." : "Saving..."}
-        </>
-      ) : saved ? (
-        <>
-          <BookmarkCheck className="mr-2 h-4 w-4" />
-          Saved
-        </>
-      ) : (
-        <>
-          <Bookmark className="mr-2 h-4 w-4" />
-          Save Meal
-        </>
-      )}
-    </Button>
+    <div className="relative inline-flex">
+      <Button
+        size="lg"
+        variant={saved ? "default" : "outline"}
+        className="rounded-full"
+        onClick={handleToggleSave}
+        disabled={loading || checking}
+      >
+        {loading || checking ? (
+          <>
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            {checking ? "Checking..." : "Saving..."}
+          </>
+        ) : saved ? (
+          <>
+            <Heart className="mr-2 h-4 w-4 fill-current" />
+            Saved
+          </>
+        ) : (
+          <>
+            <Heart className="mr-2 h-4 w-4" />
+            Save Meal
+          </>
+        )}
+      </Button>
+      <SaveCelebration show={celebrating} onComplete={() => setCelebrating(false)} />
+    </div>
   )
 }
-

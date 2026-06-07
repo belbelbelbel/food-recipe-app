@@ -637,6 +637,73 @@ export async function removeCollaboratorFromMealPlan(planId: string, collaborato
   })
 }
 
+// Assign a meal to a day of the week (0 = Monday)
+export async function assignMealToDay(
+  planId: string,
+  mealId: string,
+  day: 0 | 1 | 2 | 3 | 4 | 5 | 6,
+  sortOrder?: number
+): Promise<void> {
+  const plan = await getMealPlanById(planId)
+  if (!plan) throw new Error("Meal plan not found")
+
+  const updatedMeals = plan.meals.map((meal) => {
+    if (meal.id !== mealId) return meal
+    const dayMeals = plan.meals.filter((m) => m.dayOfWeek === day && m.id !== mealId)
+    const order = sortOrder ?? dayMeals.length
+    return { ...meal, dayOfWeek: day, sortOrder: order }
+  })
+
+  if (!db) {
+    updateLocalStorageMeals(planId, updatedMeals)
+    return
+  }
+
+  const planRef = doc(db, MEAL_PLANS_COLLECTION, planId)
+  await updateDoc(planRef, {
+    meals: updatedMeals,
+    updatedAt: serverTimestamp(),
+  })
+}
+
+// Reorder meals within a day
+export async function reorderMealsInDay(
+  planId: string,
+  day: 0 | 1 | 2 | 3 | 4 | 5 | 6,
+  orderedMealIds: string[]
+): Promise<void> {
+  const plan = await getMealPlanById(planId)
+  if (!plan) throw new Error("Meal plan not found")
+
+  const updatedMeals = plan.meals.map((meal) => {
+    if (meal.dayOfWeek !== day) return meal
+    const newOrder = orderedMealIds.indexOf(meal.id)
+    if (newOrder === -1) return meal
+    return { ...meal, sortOrder: newOrder }
+  })
+
+  if (!db) {
+    updateLocalStorageMeals(planId, updatedMeals)
+    return
+  }
+
+  const planRef = doc(db, MEAL_PLANS_COLLECTION, planId)
+  await updateDoc(planRef, {
+    meals: updatedMeals,
+    updatedAt: serverTimestamp(),
+  })
+}
+
+function updateLocalStorageMeals(planId: string, meals: Meal[]): void {
+  const plans = getLocalStorageMealPlans()
+  const planIndex = plans.findIndex((p) => p.id === planId)
+  if (planIndex !== -1) {
+    plans[planIndex].meals = meals
+    plans[planIndex].updatedAt = new Date().toISOString()
+    localStorage.setItem("flavoriz_user_meal_plans", JSON.stringify(plans))
+  }
+}
+
 // Search users by email
 export async function searchUsersByEmail(emailQuery: string): Promise<Array<{ uid: string; email: string; displayName?: string }>> {
   if (!db) return []
