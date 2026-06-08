@@ -36,10 +36,10 @@ export function SearchBar({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         className={cn(
-          "focus-enhanced h-12 rounded-full py-3 pl-11 pr-4 text-sm transition-shadow duration-300 sm:h-14 sm:text-base",
+          "focus-enhanced h-11 rounded-full border border-border/60 bg-white py-3 pl-11 pr-4 text-sm shadow-none transition-shadow duration-300 focus-visible:ring-1 focus-visible:ring-foreground/15 sm:h-12 sm:text-base",
           isHero
             ? "border-0 bg-white/95 shadow-lg focus-visible:ring-2 focus-visible:ring-white/50"
-            : "border-2 border-primary focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-2"
+            : "hover:border-border focus-visible:border-foreground/20"
         )}
         autoComplete="on"
         role="searchbox"

@@ -4,7 +4,9 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  /* Updated color scheme for food recipe website with orange accents */
+  /* Warm canvas + orange accents — Sweetgreen-inspired editorial layout */
+  --canvas: oklch(0.985 0.008 85); /* #faf8f5 cream */
+  --surface-muted: oklch(0.94 0.005 85); /* soft gray image wells */
   --background: oklch(1 0 0); /* Pure white */
   --foreground: oklch(0.2 0 0); /* Dark text */
   --card: oklch(1 0 0);
@@ -114,6 +116,8 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+  --color-canvas: var(--canvas);
+  --color-surface-muted: var(--surface-muted);
 }
 
 @layer base {
@@ -175,13 +179,34 @@
 
   /* Sweetgreen-style cinematic recipe grid */
   .grid-cinematic {
-    @apply grid grid-cols-1 gap-8 sm:grid-cols-2 sm:gap-8 lg:grid-cols-3 lg:gap-12;
+    @apply grid grid-cols-1 gap-10 sm:grid-cols-2 sm:gap-10 lg:grid-cols-3 lg:gap-14 xl:gap-16;
   }
 
-  /* Editorial serif for category + card titles */
+  /* Editorial serif for nav tabs + display type */
   .font-editorial {
     font-family: var(--font-geist-sans), ui-serif, Georgia, "Times New Roman", serif;
     font-feature-settings: "liga" 1, "kern" 1;
+  }
+
+  .bg-canvas {
+    background-color: var(--canvas);
+  }
+
+  .bg-surface-muted {
+    background-color: var(--surface-muted);
+  }
+
+  /* Sweetgreen-style uppercase nav links */
+  .nav-link {
+    @apply text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground transition-colors duration-200 hover:text-foreground;
+  }
+
+  .nav-link-active {
+    @apply text-foreground;
+  }
+
+  .form-card {
+    @apply rounded-2xl border border-border/40 bg-white p-6 sm:p-8;
   }
   
   /* Responsive text utilities */

@@ -57,7 +57,7 @@ export default function RootLayout({
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
       </head>
-      <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable} antialiased min-h-screen bg-background text-foreground overflow-x-hidden`}>
+      <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable} antialiased min-h-screen bg-canvas text-foreground overflow-x-hidden`}>
         <AuthProvider>
           <MotionProvider>
           <SavedMealsProvider>

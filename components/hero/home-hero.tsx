@@ -16,7 +16,7 @@ export function HomeHero({ searchQuery, onSearchChange, searchLoading }: HomeHer
   const heroSrc = imgError ? HERO_FALLBACK : HERO_IMAGE
 
   return (
-    <section className="relative isolate w-full min-h-[calc(100svh-3.5rem)] overflow-hidden bg-neutral-950 sm:min-h-[calc(100svh-4rem)]">
+    <section className="relative isolate flex min-h-[min(72vh,640px)] w-full items-center justify-center overflow-hidden bg-neutral-950 sm:min-h-[min(78vh,720px)]">
       <div className="absolute inset-0">
         <Image
           src={heroSrc}
@@ -30,22 +30,22 @@ export function HomeHero({ searchQuery, onSearchChange, searchLoading }: HomeHer
         />
       </div>
 
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/80 via-black/25 to-black/30" />
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-black/40 via-transparent to-black/20" />
+      <div className="pointer-events-none absolute inset-0 bg-black/45" />
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-black/30" />
 
-      <div className="absolute inset-x-0 bottom-0 z-10 px-4 pb-8 sm:px-10 sm:pb-14 lg:px-16 lg:pb-16">
-        <div className="mx-auto flex w-full max-w-7xl flex-col gap-5 sm:gap-6 lg:flex-row lg:items-end lg:justify-between">
-          <div className="max-w-xl animate-in fade-in slide-in-from-bottom-3 duration-500 fill-mode-both">
-            <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.25em] text-white/75 sm:text-xs">
-              Featured
-            </p>
-            <h1 className="text-balance text-3xl font-semibold leading-[1.05] tracking-tight text-white sm:text-4xl md:text-5xl lg:text-6xl">
-              {HERO_HEADLINE}
-            </h1>
-            <p className="mt-3 text-sm text-white/65 sm:text-base">{HERO_TAGLINE}</p>
-          </div>
+      <div className="relative z-10 w-full px-4 py-16 sm:px-6 sm:py-20 lg:px-8">
+        <div className="mx-auto flex w-full max-w-2xl flex-col items-center text-center">
+          <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.28em] text-white/75 sm:text-xs">
+            Featured
+          </p>
+          <h1 className="text-balance font-editorial text-3xl font-normal leading-[1.08] tracking-tight text-white sm:text-4xl md:text-5xl lg:text-[3.25rem]">
+            {HERO_HEADLINE}
+          </h1>
+          <p className="mt-3 max-w-md text-sm text-white/70 sm:mt-4 sm:text-base">
+            {HERO_TAGLINE}
+          </p>
 
-          <div className="w-full max-w-md animate-in fade-in slide-in-from-bottom-2 duration-500 fill-mode-both delay-150 lg:max-w-sm">
+          <div className="mt-8 w-full max-w-md sm:mt-10">
             <SearchBar
               value={searchQuery}
               onChange={onSearchChange}

@@ -40,7 +40,7 @@ export function DraggableMealCard({
       animate={justDropped ? { scale: [1, 1.02, 1] } : { scale: 1 }}
       transition={{ type: "spring", stiffness: 380, damping: 32 }}
       className={cn(
-        "group relative overflow-hidden rounded-xl border border-border bg-card shadow-sm",
+        "group relative overflow-hidden rounded-xl border border-border/40 bg-white",
         isDragging && "z-50 opacity-60 shadow-md",
         justDropped && "ring-1 ring-primary/50"
       )}
@@ -67,7 +67,7 @@ export function DraggableMealCard({
             />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-xs font-medium truncate group-hover:text-primary transition-colors">
+            <p className="truncate text-[10px] font-bold uppercase tracking-[0.06em] group-hover:text-primary">
               {meal.title}
             </p>
             <p className="text-[10px] text-muted-foreground flex items-center gap-1">

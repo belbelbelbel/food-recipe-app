@@ -589,7 +589,7 @@ export async function fetchRecipes(): Promise<Recipe[]> {
   }
 
   try {
-    const recipes = await fetchRandomRecipes(6)
+    const recipes = await fetchRandomRecipes(18)
 
     if (recipes.length > 0) {
       recipesCache = { data: recipes, ts: Date.now() }
@@ -678,7 +678,7 @@ export async function fetchRecipeById(id: string): Promise<RecipeDetail> {
         return {
           id: meal.idMeal,
           title: meal.strMeal,
-          image: meal.strMealThumb || "/placeholder.svg",
+          image: recipeImageSrc(meal.strMealThumb),
           category: meal.strCategory || "Unknown",
           duration: "30 min",
           ingredients,

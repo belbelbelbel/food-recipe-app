@@ -4,10 +4,11 @@ import { useEffect, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
 import Image from "next/image"
 import { motion } from "framer-motion"
-import { Clock, ArrowRight } from "lucide-react"
+import { ArrowRight } from "lucide-react"
 import { fetchMealsByPlanId, type Meal } from "@/lib/api"
-import { Button } from "@/components/ui/button"
+import { PageHeader } from "@/components/page-header"
 import { LoadingCard } from "@/components/loading-card"
+import { duration, easeOut, stagger } from "@/lib/motion"
 
 export default function MealDetailsPage() {
   const params = useParams()
@@ -33,71 +34,68 @@ export default function MealDetailsPage() {
   }, [params.id])
 
   return (
-    <main className="min-h-screen py-6 sm:py-8 md:py-12">
+    <main className="min-h-screen bg-canvas padding-y-responsive">
       <div className="container-responsive max-w-7xl">
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="mb-8 sm:mb-10 md:mb-12"
-        >
-          <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-balance mb-3 sm:mb-4">
-            Your <span className="text-primary">Meal Plan</span>
-          </h1>
-          <p className="text-sm sm:text-base md:text-lg text-muted-foreground text-pretty">A week of delicious meals planned just for you</p>
+        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+          <PageHeader
+            eyebrow="Meal plan"
+            title={
+              <>
+                Your <span className="text-primary">Meals</span>
+              </>
+            }
+            description="A week of delicious meals planned just for you."
+          />
         </motion.div>
 
-        {/* Meals Grid */}
         {loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+          <div className="grid-cinematic">
             {Array.from({ length: 4 }).map((_, i) => (
               <LoadingCard key={i} />
             ))}
           </div>
         ) : meals.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+          <div className="grid-cinematic">
             {meals.map((meal, index) => (
-              <motion.div
+              <motion.article
                 key={meal.id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: index * 0.1 }}
-                whileHover={{ scale: 1.02 }}
-                className="group overflow-hidden rounded-xl sm:rounded-2xl bg-card shadow-sm hover:shadow-md transition-shadow"
+                transition={{ duration: duration.normal, ease: easeOut, delay: stagger(index, 0.35) }}
+                className="group w-full"
               >
-                <div className="relative aspect-[4/3] overflow-hidden">
-                  <Image
-                    src={meal.image || "/placeholder.svg"}
-                    alt={meal.title}
-                    fill
-                    className="object-cover transition-transform duration-300 group-hover:scale-105"
-                  />
-                </div>
-                <div className="p-4 sm:p-5">
-                  <h3 className="text-lg sm:text-xl font-semibold text-balance mb-2">{meal.title}</h3>
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
-                    <div className="flex items-center gap-1.5 text-xs sm:text-sm text-muted-foreground">
-                      <Clock className="h-3 w-3 sm:h-4 sm:w-4" />
-                      <span>{meal.duration}</span>
-                    </div>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="gap-2 text-primary hover:text-primary hover:bg-primary/10 w-full sm:w-auto justify-start sm:justify-center"
-                      onClick={() => router.push(`/recipes/${meal.recipeId}`)}
-                    >
-                      View Recipe
-                      <ArrowRight className="h-3 w-3 sm:h-4 sm:w-4" />
-                    </Button>
+                <button
+                  type="button"
+                  onClick={() => router.push(`/recipes/${meal.recipeId}`)}
+                  className="focus-enhanced block w-full text-left"
+                >
+                  <div className="relative mb-5 aspect-square overflow-hidden rounded-2xl bg-surface-muted sm:mb-6 sm:rounded-3xl">
+                    <Image
+                      src={meal.image || "/placeholder.svg"}
+                      alt={meal.title}
+                      fill
+                      className="object-cover transition-transform duration-500 group-hover:scale-[1.02]"
+                      sizes="(max-width: 768px) 100vw, 33vw"
+                    />
                   </div>
-                </div>
-              </motion.div>
+                  <div className="space-y-2.5 px-0.5">
+                    <h3 className="text-sm font-bold uppercase tracking-[0.08em] text-foreground sm:text-[15px]">
+                      {meal.title}
+                    </h3>
+                    <p className="text-xs text-muted-foreground sm:text-sm">{meal.duration}</p>
+                    <span className="inline-flex items-center gap-1.5 pt-0.5 text-xs font-medium text-foreground transition-transform duration-300 group-hover:translate-x-0.5 sm:text-sm">
+                      View recipe
+                      <ArrowRight className="h-3.5 w-3.5" />
+                    </span>
+                  </div>
+                </button>
+              </motion.article>
             ))}
           </div>
         ) : (
-          <div className="text-center py-8 sm:py-12">
-            <p className="text-sm sm:text-base text-muted-foreground">No meals found in this plan.</p>
+          <div className="py-20 text-center">
+            <p className="font-editorial text-2xl text-foreground">No meals found</p>
+            <p className="mt-2 text-sm text-muted-foreground">This plan doesn&apos;t have any meals yet.</p>
           </div>
         )}
       </div>

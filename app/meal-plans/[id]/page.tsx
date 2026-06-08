@@ -80,12 +80,15 @@ export default function MealPlanDetailPage() {
   const showEmpty = !initialLoading && meals.length === 0
 
   return (
-    <main className="min-h-screen bg-[#faf8f5] py-6 sm:py-8 md:py-12">
+    <main className="min-h-screen bg-canvas padding-y-responsive">
       <div className="container-responsive max-w-7xl">
         <div className="mb-8 sm:mb-10">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <h1 className="text-balance text-2xl font-bold sm:text-3xl md:text-4xl lg:text-5xl">
+              <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
+                Weekly board
+              </p>
+              <h1 className="font-editorial text-balance text-3xl font-normal tracking-tight sm:text-4xl md:text-5xl">
                 {planTitle ? (
                   <span className="text-primary">{planTitle}</span>
                 ) : initialLoading ? (
@@ -96,7 +99,7 @@ export default function MealPlanDetailPage() {
                   </>
                 )}
               </h1>
-              <p className="mt-3 text-sm text-muted-foreground text-pretty sm:text-base md:text-lg">
+              <p className="mt-3 text-sm text-muted-foreground text-pretty sm:text-base">
                 {initialLoading
                   ? "Loading your plan..."
                   : meals.length > 0

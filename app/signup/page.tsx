@@ -4,7 +4,9 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { motion } from "framer-motion"
-import { Eye, EyeOff, Loader2, ChefHat, Check } from "lucide-react"
+import { Eye, EyeOff, Loader2, Check } from "lucide-react"
+import { AuthPageShell } from "@/components/page-header"
+import { FlavorizLogo } from "@/components/flavoriz-logo"
 import { signUp } from "@/lib/firebase/auth"
 import { handleError, showSuccess } from "@/lib/error-handler"
 import { useAuth } from "@/contexts/auth-context"
@@ -139,31 +141,20 @@ export default function SignUpPage() {
   ]
 
   return (
-    <div className="min-h-screen flex items-center justify-center padding-responsive py-12">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-        className="w-full max-w-md"
-      >
-        {/* Header */}
-        <div className="text-center mb-8">
-          <div className="flex justify-center mb-4">
-            <div className="rounded-full bg-primary/10 p-3">
-              <ChefHat className="h-8 w-8 text-primary" />
-            </div>
-          </div>
-          <h1 className="text-3xl sm:text-4xl font-bold mb-2">
+    <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+      <AuthPageShell
+        title={
+          <>
             Join <span className="text-primary">Flavoriz</span>
-          </h1>
-          <p className="text-muted-foreground">
-            Create your account to start planning amazing meals
-          </p>
+          </>
+        }
+        description="Create your account to start planning amazing meals."
+      >
+        <div className="mb-6 flex justify-center">
+          <FlavorizLogo wordmarkOnly size="md" />
         </div>
 
-        {/* Sign Up Form */}
-        <div className="bg-card rounded-2xl border border-border p-6 sm:p-8 shadow-sm">
-          <form onSubmit={handleSubmit} className="space-y-5">
+        <form onSubmit={handleSubmit} className="space-y-5">
             {error && (
               <Alert variant="destructive">
                 <AlertDescription>{error}</AlertDescription>
@@ -304,28 +295,22 @@ export default function SignUpPage() {
             </Button>
           </form>
 
-          {/* Sign In Link */}
           <div className="mt-6 text-center">
             <p className="text-sm text-muted-foreground">
               Already have an account?{" "}
-              <Link href="/login" className="text-primary font-medium hover:underline">
+              <Link href="/login" className="font-medium text-primary hover:underline">
                 Sign in
               </Link>
             </p>
           </div>
-        </div>
 
-        {/* Back to Home */}
-        <div className="mt-6 text-center">
-          <Link
-            href="/"
-            className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-          >
-            ← Back to home
-          </Link>
-        </div>
-      </motion.div>
-    </div>
+          <div className="mt-6 text-center">
+            <Link href="/" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
+              ← Back to recipes
+            </Link>
+          </div>
+      </AuthPageShell>
+    </motion.div>
   )
 }
 

@@ -42,10 +42,10 @@ export function DayColumn({
       <div
         ref={setNodeRef}
         className={cn(
-          "min-h-[120px] flex-1 rounded-xl border border-dashed p-2 transition-colors duration-200",
+          "min-h-[120px] flex-1 rounded-2xl border border-dashed p-2 transition-colors duration-200",
           isOver || isDroppableOver
-            ? "border-primary/60 bg-primary/[0.04]"
-            : "border-border/50 bg-muted/30"
+            ? "border-primary/50 bg-primary/[0.04]"
+            : "border-border/40 bg-white"
         )}
       >
         <SortableContext items={sortedMeals.map((m) => m.id)} strategy={verticalListSortingStrategy}>

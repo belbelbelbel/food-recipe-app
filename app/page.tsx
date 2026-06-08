@@ -12,6 +12,7 @@ import { RecipeGrid } from "@/components/recipe-grid"
 import { FilterBar } from "@/components/filter-bar"
 import { HomeHero } from "@/components/hero/home-hero"
 import { useDebounce } from "@/hooks/use-debounce"
+
 export default function HomePage() {
   const [recipes, setRecipes] = useState<Recipe[]>([])
   const [loading, setLoading] = useState(true)
@@ -21,14 +22,12 @@ export default function HomePage() {
 
   const debouncedSearchQuery = useDebounce(searchQuery, 500)
 
-  // Load categories once
   useEffect(() => {
     fetchCategories()
       .then((data) => setCategories(["All", ...data]))
       .catch(console.error)
   }, [])
 
-  // Single fetch — avoids triple API storm on mount
   useEffect(() => {
     let cancelled = false
 
@@ -58,32 +57,39 @@ export default function HomePage() {
   }, [debouncedSearchQuery, activeCategory])
 
   const emptyState = (
-    <div className="py-20 text-center">
-      <p className="font-editorial text-2xl text-foreground">Nothing here yet</p>
-      <p className="mt-2 text-sm text-muted-foreground">Try another category or search.</p>
+    <div className="py-24 text-center">
+      <p className="font-editorial text-2xl text-foreground sm:text-3xl">Nothing here yet</p>
+      <p className="mt-3 text-sm text-muted-foreground sm:text-base">
+        Try another category or search term.
+      </p>
     </div>
   )
 
   return (
-    <div className="min-h-screen bg-[#faf8f5]">
+    <div className="min-h-screen bg-canvas">
       <HomeHero
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
         searchLoading={loading}
       />
 
-      <section className="px-4 py-14 sm:px-6 sm:py-20 lg:px-8">
-        <div className="mx-auto max-w-7xl">
-          <div className="mb-10 sm:mb-14">
-            <FilterBar
-              categories={categories}
-              activeCategory={activeCategory}
-              onCategoryChange={setActiveCategory}
-            />
-          </div>
-
-          <RecipeGrid recipes={recipes} loading={loading} emptyState={emptyState} />
+      <section className="border-b border-border/20 bg-canvas py-8 sm:py-10">
+        <div className="container-responsive">
+          <FilterBar
+            categories={categories}
+            activeCategory={activeCategory}
+            onCategoryChange={setActiveCategory}
+          />
         </div>
+      </section>
+
+      <section id="recipes" className="container-responsive py-10 sm:py-14 lg:py-16">
+        <RecipeGrid
+          recipes={recipes}
+          loading={loading}
+          emptyState={emptyState}
+          resetKey={`${activeCategory}-${debouncedSearchQuery}`}
+        />
       </section>
     </div>
   )

@@ -5,7 +5,7 @@ interface InstructionsTimelineProps {
 export function InstructionsTimeline({ instructions }: InstructionsTimelineProps) {
   return (
     <section id="instructions-section">
-      <h2 className="font-editorial mb-6 text-2xl font-medium tracking-tight sm:text-3xl">
+      <h2 className="font-editorial mb-6 text-2xl font-normal tracking-tight sm:mb-8 sm:text-3xl">
         Instructions
       </h2>
       <ol className="relative space-y-0">
@@ -13,7 +13,7 @@ export function InstructionsTimeline({ instructions }: InstructionsTimelineProps
           <li key={index} className="relative flex gap-4 pb-8 last:pb-0">
             {index < instructions.length - 1 && (
               <span
-                className="absolute left-4 top-9 bottom-0 w-px -translate-x-1/2 bg-border"
+                className="absolute bottom-0 left-4 top-9 w-px -translate-x-1/2 bg-border/50"
                 aria-hidden
               />
             )}

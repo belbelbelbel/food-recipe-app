@@ -56,7 +56,7 @@ export function MotionProvider({ children }: { children: ReactNode }) {
       scrollToTop()
       setPhase("idle")
       setActiveTransition(null)
-    }, 400)
+    }, 320)
     return () => clearTimeout(timer)
   }, [phase])
 

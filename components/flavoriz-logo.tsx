@@ -12,6 +12,8 @@ interface FlavorizLogoProps {
   responsive?: boolean
   /** Always show icon mark only */
   iconOnly?: boolean
+  /** Sweetgreen-style text-only wordmark (no icon) */
+  wordmarkOnly?: boolean
 }
 
 const sizes = {
@@ -123,9 +125,23 @@ export function FlavorizLogo({
   variant = "default",
   responsive = false,
   iconOnly = false,
+  wordmarkOnly = false,
 }: FlavorizLogoProps) {
   const gradientId = useId().replace(/:/g, "")
   const s = sizes[size]
+
+  if (wordmarkOnly) {
+    return (
+      <span className={cn("inline-flex min-w-0", className)}>
+        <Wordmark
+          wordClass={s.word}
+          tagClass={s.tag}
+          showTagline={showTagline}
+          variant={variant}
+        />
+      </span>
+    )
+  }
 
   if (responsive) {
     return (

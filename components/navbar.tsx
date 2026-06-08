@@ -4,7 +4,6 @@ import { useState, useEffect } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { Menu, X, User, LogOut, Settings, Shield, Heart } from "lucide-react"
-import { motion, AnimatePresence } from "framer-motion"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
@@ -43,18 +42,18 @@ function useAuthSafe() {
   }
 }
 
+const LEFT_LINKS = [{ href: "/", label: "Recipes" }]
+const RIGHT_LINKS = [{ href: "/meal-plans", label: "Meal Plans" }]
+
 export function Navbar() {
   const pathname = usePathname()
   const router = useRouter()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const { user, userProfile, loading, signOut } = useAuthSafe()
   const savedMeals = useSavedMealsSafe()
-  const isHome = pathname === "/"
 
-  const links = [
-    { href: "/", label: "Home" },
-    { href: "/meal-plans", label: "Meal Plans" },
-  ]
+  const navLinkClass = (href: string) =>
+    cn("nav-link focus-enhanced rounded-sm px-1 py-2", pathname === href && "nav-link-active")
 
   const handleSignOut = async () => {
     try {
@@ -92,146 +91,137 @@ export function Navbar() {
     }
   }, [isMobileMenuOpen])
 
+  const userMenu = !loading && user && (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="sm" className="h-9 w-9 shrink-0 rounded-full p-0">
+          <Avatar className="h-9 w-9">
+            <AvatarFallback className="bg-primary text-primary-foreground">
+              {getUserInitials()}
+            </AvatarFallback>
+          </Avatar>
+          <span className="sr-only">User menu</span>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-56">
+        <DropdownMenuLabel>
+          <div className="flex flex-col space-y-1">
+            <p className="text-sm font-medium">{userProfile?.displayName || "User"}</p>
+            <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+            {userProfile?.role && (
+              <div className="mt-1 flex items-center gap-1">
+                {userProfile.role === "admin" && <Shield className="h-3 w-3 text-primary" />}
+                <span className="text-xs capitalize text-muted-foreground">{userProfile.role}</span>
+              </div>
+            )}
+          </div>
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem asChild>
+          <Link href="/meal-plans" className="cursor-pointer">
+            <User className="mr-2 h-4 w-4" />
+            My Meal Plans
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link href="/saved-meals" className="cursor-pointer">
+            <Heart className="mr-2 h-4 w-4" />
+            Saved Meals
+            {savedMeals.savedCount > 0 && (
+              <span className="ml-auto rounded-full bg-primary px-1.5 py-0.5 text-xs text-primary-foreground">
+                {savedMeals.savedCount}
+              </span>
+            )}
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link href="/profile" className="cursor-pointer">
+            <Settings className="mr-2 h-4 w-4" />
+            Settings
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          onClick={handleSignOut}
+          className="cursor-pointer text-destructive focus:text-destructive"
+        >
+          <LogOut className="mr-2 h-4 w-4" />
+          Sign Out
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
+
   return (
     <>
-      <nav
-        className={cn(
-          "sticky top-0 z-50 w-full border-b transition-colors duration-300 [transform:translateZ(0)]",
-          isHome
-            ? "border-primary/10 bg-[#faf8f5]"
-            : "border-border/40 bg-background shadow-sm"
-        )}
-      >
-        <div className="container-responsive flex h-14 items-center justify-between gap-2 sm:h-16 sm:gap-4">
+      <nav className="sticky top-0 z-50 w-full border-b border-border/25 bg-canvas [transform:translateZ(0)]">
+        {/* Desktop — Sweetgreen-style: links | logo | links + CTA */}
+        <div className="container-responsive hidden h-[4.25rem] items-center md:grid md:grid-cols-[1fr_auto_1fr] lg:h-[4.5rem]">
+          <div className="flex items-center gap-6 lg:gap-10">
+            {LEFT_LINKS.map((link) => (
+              <Link key={link.href} href={link.href} className={navLinkClass(link.href)}>
+                {link.label}
+              </Link>
+            ))}
+            {user && (
+              <Link
+                href="/saved-meals"
+                className={cn(navLinkClass("/saved-meals"), "inline-flex items-center gap-1.5")}
+              >
+                Saved
+                {savedMeals.savedCount > 0 && (
+                  <span className="inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">
+                    {savedMeals.savedCount}
+                  </span>
+                )}
+              </Link>
+            )}
+          </div>
+
+          <Link
+            href="/"
+            className="focus-enhanced justify-self-center rounded-xl px-2 py-1 transition-opacity hover:opacity-85"
+            aria-label="Flavoriz home"
+          >
+            <FlavorizLogo wordmarkOnly size="lg" />
+          </Link>
+
+          <div className="flex items-center justify-end gap-4 lg:gap-6">
+            {RIGHT_LINKS.map((link) => (
+              <Link key={link.href} href={link.href} className={navLinkClass(link.href)}>
+                {link.label}
+              </Link>
+            ))}
+
+            {!loading && !user && (
+              <Link href="/login" className="nav-link focus-enhanced">
+                Sign In
+              </Link>
+            )}
+
+            {userMenu}
+
+            <Button
+              size="sm"
+              className="h-9 rounded-full px-5 text-xs font-semibold uppercase tracking-[0.12em]"
+              asChild
+            >
+              <Link href="/meal-plans">Plan Meals</Link>
+            </Button>
+          </div>
+        </div>
+
+        {/* Mobile */}
+        <div className="container-responsive flex h-14 items-center justify-between gap-2 sm:h-16 md:hidden">
           <Link
             href="/"
             className="focus-enhanced min-w-0 shrink-0 rounded-xl p-1 transition-opacity hover:opacity-90"
             aria-label="Flavoriz home"
           >
-            <FlavorizLogo responsive size="md" />
+            <FlavorizLogo wordmarkOnly size="md" />
           </Link>
 
-          {/* Desktop Navigation */}
-          <div className="hidden min-w-0 items-center gap-4 lg:gap-6 md:flex">
-            {links.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={cn(
-                  "whitespace-nowrap text-[11px] font-semibold uppercase tracking-[0.15em] transition-colors hover:text-primary focus-enhanced rounded-md px-2 py-2 lg:px-3",
-                  pathname === link.href ? "text-foreground" : "text-muted-foreground",
-                )}
-              >
-                {link.label}
-              </Link>
-            ))}
-
-            {user && savedMeals.savedCount > 0 && (
-              <Link
-                href="/saved-meals"
-                className="relative flex shrink-0 items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-primary transition-colors focus-enhanced rounded-md px-2 py-1"
-              >
-                <Heart className="h-4 w-4 text-primary fill-primary" />
-                <AnimatePresence mode="popLayout">
-                  <motion.span
-                    key={savedMeals.savedCount}
-                    initial={{ scale: 0.5, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    exit={{ scale: 0.5, opacity: 0 }}
-                    transition={{ type: "spring", stiffness: 500, damping: 25 }}
-                    className="inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-primary px-1 text-xs font-semibold text-primary-foreground"
-                  >
-                    {savedMeals.savedCount}
-                  </motion.span>
-                </AnimatePresence>
-              </Link>
-            )}
-
-            {!loading && (
-              <>
-                {user ? (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm" className="h-9 w-9 shrink-0 rounded-full p-0">
-                        <Avatar className="h-9 w-9">
-                          <AvatarFallback className="bg-primary text-primary-foreground">
-                            {getUserInitials()}
-                          </AvatarFallback>
-                        </Avatar>
-                        <span className="sr-only">User menu</span>
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-56">
-                      <DropdownMenuLabel>
-                        <div className="flex flex-col space-y-1">
-                          <p className="text-sm font-medium">
-                            {userProfile?.displayName || "User"}
-                          </p>
-                          <p className="text-xs text-muted-foreground truncate">
-                            {user.email}
-                          </p>
-                          {userProfile?.role && (
-                            <div className="mt-1 flex items-center gap-1">
-                              {userProfile.role === "admin" && (
-                                <Shield className="h-3 w-3 text-primary" />
-                              )}
-                              <span className="text-xs capitalize text-muted-foreground">
-                                {userProfile.role}
-                              </span>
-                            </div>
-                          )}
-                        </div>
-                      </DropdownMenuLabel>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem asChild>
-                        <Link href="/meal-plans" className="cursor-pointer">
-                          <User className="mr-2 h-4 w-4" />
-                          My Meal Plans
-                        </Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem asChild>
-                        <Link href="/saved-meals" className="cursor-pointer">
-                          <Heart className="mr-2 h-4 w-4" />
-                          Saved Meals
-                          {savedMeals.savedCount > 0 && (
-                            <span className="ml-auto rounded-full bg-primary px-1.5 py-0.5 text-xs text-primary-foreground">
-                              {savedMeals.savedCount}
-                            </span>
-                          )}
-                        </Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem asChild>
-                        <Link href="/profile" className="cursor-pointer">
-                          <Settings className="mr-2 h-4 w-4" />
-                          Settings
-                        </Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem
-                        onClick={handleSignOut}
-                        className="cursor-pointer text-destructive focus:text-destructive"
-                      >
-                        <LogOut className="mr-2 h-4 w-4" />
-                        Sign Out
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                ) : (
-                  <div className="flex shrink-0 items-center gap-2 lg:gap-3">
-                    <Button variant="ghost" size="sm" asChild>
-                      <Link href="/login">Sign In</Link>
-                    </Button>
-                    <Button size="sm" asChild>
-                      <Link href="/signup">Sign Up</Link>
-                    </Button>
-                  </div>
-                )}
-              </>
-            )}
-          </div>
-
-          {/* Mobile actions */}
-          <div className="flex shrink-0 items-center gap-0.5 sm:gap-1 md:hidden">
+          <div className="flex shrink-0 items-center gap-0.5 sm:gap-1">
             {user && savedMeals.savedCount > 0 && (
               <Link
                 href="/saved-meals"
@@ -252,11 +242,7 @@ export function Navbar() {
               aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
               aria-expanded={isMobileMenuOpen}
             >
-              {isMobileMenuOpen ? (
-                <X className="h-5 w-5" />
-              ) : (
-                <Menu className="h-5 w-5" />
-              )}
+              {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </Button>
           </div>
         </div>
@@ -281,7 +267,7 @@ export function Navbar() {
       >
         <div className="flex h-full min-h-0 flex-col">
           <div className="mb-4 flex shrink-0 items-start justify-between gap-3 border-b pb-4">
-            <FlavorizLogo size="sm" showTagline className="min-w-0 max-w-[calc(100%-3rem)]" />
+            <FlavorizLogo wordmarkOnly size="sm" showTagline className="min-w-0 max-w-[calc(100%-3rem)]" />
             <Button
               variant="ghost"
               size="sm"
@@ -294,15 +280,13 @@ export function Navbar() {
           </div>
 
           <nav className="flex min-h-0 flex-1 flex-col space-y-1 overflow-y-auto overscroll-contain">
-            {links.map((link) => (
+            {[...LEFT_LINKS, ...RIGHT_LINKS].map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
                 className={cn(
                   "flex min-h-11 items-center rounded-lg px-4 py-3 text-base font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus-enhanced",
-                  pathname === link.href
-                    ? "bg-accent text-accent-foreground"
-                    : "text-foreground"
+                  pathname === link.href ? "bg-accent text-accent-foreground" : "text-foreground"
                 )}
                 onClick={() => setIsMobileMenuOpen(false)}
               >
@@ -325,20 +309,10 @@ export function Navbar() {
                           <p className="truncate text-sm font-medium">
                             {userProfile?.displayName || "User"}
                           </p>
-                          <p className="truncate text-xs text-muted-foreground">
-                            {user.email}
-                          </p>
+                          <p className="truncate text-xs text-muted-foreground">{user.email}</p>
                         </div>
                       </div>
                     </div>
-                    <Link
-                      href="/meal-plans"
-                      className="flex min-h-11 items-center rounded-lg px-4 py-3 text-base font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus-enhanced"
-                      onClick={() => setIsMobileMenuOpen(false)}
-                    >
-                      <User className="mr-3 h-5 w-5 shrink-0" />
-                      My Meal Plans
-                    </Link>
                     <Link
                       href="/saved-meals"
                       className="flex min-h-11 items-center rounded-lg px-4 py-3 text-base font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus-enhanced"
@@ -374,12 +348,12 @@ export function Navbar() {
                   </>
                 ) : (
                   <div className="mt-2 space-y-2 border-t border-border px-4 py-4">
-                    <Button variant="outline" className="h-11 w-full" asChild>
+                    <Button variant="outline" className="h-11 w-full rounded-full" asChild>
                       <Link href="/login" onClick={() => setIsMobileMenuOpen(false)}>
                         Sign In
                       </Link>
                     </Button>
-                    <Button className="h-11 w-full" asChild>
+                    <Button className="h-11 w-full rounded-full" asChild>
                       <Link href="/signup" onClick={() => setIsMobileMenuOpen(false)}>
                         Sign Up
                       </Link>

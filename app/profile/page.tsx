@@ -7,6 +7,7 @@ import { useAuth } from "@/contexts/auth-context"
 import { updateUserProfile } from "@/lib/firebase/auth"
 import { handleError, showSuccess } from "@/lib/error-handler"
 import { ProtectedRoute } from "@/components/protected-route"
+import { PageHeader } from "@/components/page-header"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -65,39 +66,39 @@ function ProfileContent() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex min-h-screen items-center justify-center bg-canvas">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen py-6 sm:py-8 md:py-12">
+    <div className="min-h-screen bg-canvas padding-y-responsive">
       <div className="container-responsive max-w-2xl">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-        >
-          <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-balance mb-4 sm:mb-6">
-            My <span className="text-primary">Profile</span>
-          </h1>
+        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+          <PageHeader
+            eyebrow="Account"
+            title={
+              <>
+                My <span className="text-primary">Profile</span>
+              </>
+            }
+          />
 
-          <div className="bg-card rounded-xl sm:rounded-2xl border border-border p-4 sm:p-6 md:p-8 shadow-sm space-y-4 sm:space-y-6">
-            {/* Avatar Section */}
-            <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6 pb-4 sm:pb-6 border-b border-border">
+          <div className="form-card space-y-6">
+            <div className="flex flex-col items-center gap-4 border-b border-border/40 pb-6 sm:flex-row sm:items-start">
               <Avatar className="h-20 w-20 sm:h-24 sm:w-24">
-                <AvatarFallback className="bg-primary text-primary-foreground text-xl sm:text-2xl">
+                <AvatarFallback className="bg-primary text-xl text-primary-foreground sm:text-2xl">
                   {getUserInitials()}
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1 text-center sm:text-left">
-                <h2 className="text-xl sm:text-2xl font-bold mb-1 sm:mb-2">
+                <h2 className="text-lg font-bold uppercase tracking-[0.06em] sm:text-xl">
                   {userProfile?.displayName || "User"}
                 </h2>
-                <p className="text-xs sm:text-sm text-muted-foreground mb-2 sm:mb-3 break-all">{user?.email}</p>
+                <p className="mt-1 break-all text-sm text-muted-foreground">{user?.email}</p>
                 {userProfile?.role && (
-                  <Badge variant="secondary" className="capitalize text-xs">
+                  <Badge variant="secondary" className="mt-3 capitalize">
                     <Shield className="mr-1 h-3 w-3" />
                     {userProfile.role}
                   </Badge>
@@ -105,12 +106,11 @@ function ProfileContent() {
               </div>
             </div>
 
-            {/* Profile Form */}
-            <form onSubmit={handleSave} className="space-y-4 sm:space-y-5">
+            <form onSubmit={handleSave} className="space-y-5">
               <div className="space-y-2">
-                <Label htmlFor="displayName" className="text-sm sm:text-base">
-                  <User className="inline mr-2 h-3 w-3 sm:h-4 sm:w-4" />
-                  Display Name
+                <Label htmlFor="displayName">
+                  <User className="mr-2 inline h-4 w-4" />
+                  Display name
                 </Label>
                 <Input
                   id="displayName"
@@ -119,51 +119,30 @@ function ProfileContent() {
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value)}
                   disabled={saving}
-                  className="text-sm sm:text-base"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-sm sm:text-base">
-                  <Mail className="inline mr-2 h-3 w-3 sm:h-4 sm:w-4" />
-                  Email Address
+                <Label htmlFor="email">
+                  <Mail className="mr-2 inline h-4 w-4" />
+                  Email address
                 </Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={user?.email || ""}
-                  disabled
-                  className="bg-muted text-sm sm:text-base"
-                />
-                <p className="text-xs text-muted-foreground">
-                  Email cannot be changed
-                </p>
+                <Input id="email" type="email" value={user?.email || ""} disabled className="bg-surface-muted" />
+                <p className="text-xs text-muted-foreground">Email cannot be changed</p>
               </div>
 
               {userProfile?.role && (
                 <div className="space-y-2">
-                  <Label className="text-sm sm:text-base">
-                    <Shield className="inline mr-2 h-3 w-3 sm:h-4 sm:w-4" />
-                    Account Role
+                  <Label>
+                    <Shield className="mr-2 inline h-4 w-4" />
+                    Account role
                   </Label>
-                  <Input
-                    value={userProfile.role}
-                    disabled
-                    className="bg-muted capitalize text-sm sm:text-base"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Role is managed by administrators
-                  </p>
+                  <Input value={userProfile.role} disabled className="bg-surface-muted capitalize" />
                 </div>
               )}
 
-              <div className="flex justify-end pt-2 sm:pt-4">
-                <Button
-                  type="submit"
-                  disabled={saving}
-                  size="lg"
-                  className="rounded-full w-full sm:w-auto"
-                >
+              <div className="flex justify-end pt-2">
+                <Button type="submit" disabled={saving} size="lg" className="w-full rounded-full sm:w-auto">
                   {saving ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -172,7 +151,7 @@ function ProfileContent() {
                   ) : (
                     <>
                       <Save className="mr-2 h-4 w-4" />
-                      Save Changes
+                      Save changes
                     </>
                   )}
                 </Button>
@@ -184,4 +163,3 @@ function ProfileContent() {
     </div>
   )
 }
-

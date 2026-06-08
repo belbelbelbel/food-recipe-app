@@ -5,6 +5,7 @@ import { motion } from "framer-motion"
 import { Heart } from "lucide-react"
 import { getSavedMeals, type SavedMeal } from "@/lib/firebase/saved-meals"
 import { RecipeGrid } from "@/components/recipe-grid"
+import { PageHeader } from "@/components/page-header"
 import { useAuth } from "@/contexts/auth-context"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
@@ -24,7 +25,7 @@ export default function SavedMealsPage() {
         loadSavedMeals()
       }
     }
-  }, [user, authLoading])
+  }, [user, authLoading, router])
 
   async function loadSavedMeals() {
     try {
@@ -56,44 +57,39 @@ export default function SavedMealsPage() {
   })
 
   const emptyState = (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="text-center py-8 sm:py-12 md:py-16 lg:py-20"
-    >
-      <div className="max-w-md mx-auto px-4">
-        <Heart className="h-12 w-12 sm:h-16 sm:w-16 mx-auto mb-3 sm:mb-4 text-muted-foreground opacity-50" />
-        <h3 className="text-base sm:text-lg md:text-xl font-semibold mb-2">No saved meals yet</h3>
-        <p className="text-xs sm:text-sm md:text-base text-muted-foreground mb-4 sm:mb-6">
-          Start saving your favorite recipes to access them anytime!
-        </p>
-        <Link href="/">
-          <Button size="lg" className="rounded-full w-full sm:w-auto">
-            Browse Recipes
-          </Button>
-        </Link>
-      </div>
-    </motion.div>
+    <div className="py-20 text-center">
+      <Heart className="mx-auto mb-4 h-12 w-12 text-muted-foreground/40 sm:h-14 sm:w-14" />
+      <p className="font-editorial text-2xl text-foreground sm:text-3xl">No saved meals yet</p>
+      <p className="mx-auto mt-3 max-w-md text-sm text-muted-foreground sm:text-base">
+        Start saving your favorite recipes to access them anytime.
+      </p>
+      <Button size="lg" className="mt-6 rounded-full" asChild>
+        <Link href="/">Browse recipes</Link>
+      </Button>
+    </div>
   )
 
   return (
-    <main className="min-h-screen py-6 sm:py-8 md:py-12">
-      <div className="container-responsive max-w-7xl">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="mb-6 sm:mb-8"
-        >
-          <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-balance mb-3 sm:mb-4">
-            My <span className="text-primary">Saved Meals</span>
-          </h1>
-          <p className="text-sm sm:text-base md:text-lg text-muted-foreground text-pretty">
-            Your favorite recipes saved for later
-          </p>
+    <main className="min-h-screen bg-canvas padding-y-responsive">
+      <div className="container-responsive">
+        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+          <PageHeader
+            eyebrow="Your collection"
+            title={
+              <>
+                Saved <span className="text-primary">Meals</span>
+              </>
+            }
+            description="Your favorite recipes saved for later."
+          />
         </motion.div>
 
-        <RecipeGrid recipes={recipes} loading={authLoading || loading} emptyState={emptyState} />
+        <RecipeGrid
+          recipes={recipes}
+          loading={authLoading || loading}
+          emptyState={emptyState}
+          resetKey="saved-meals"
+        />
       </div>
     </main>
   )
