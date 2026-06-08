@@ -1,9 +1,9 @@
 "use client"
 
-import { AnimatePresence, LayoutGroup, motion } from "framer-motion"
 import type { Recipe } from "@/lib/api"
 import { RecipeCard } from "@/components/recipe-card"
 import { LoadingCard } from "@/components/loading-card"
+
 interface RecipeGridProps {
   recipes: Recipe[]
   loading?: boolean
@@ -26,14 +26,10 @@ export function RecipeGrid({ recipes, loading = false, emptyState }: RecipeGridP
   }
 
   return (
-    <LayoutGroup>
-      <motion.div layout className="grid-cinematic">
-        <AnimatePresence mode="popLayout" initial={false}>
-          {recipes.map((recipe, index) => (
-            <RecipeCard key={recipe.id} recipe={recipe} index={index} />
-          ))}
-        </AnimatePresence>
-      </motion.div>
-    </LayoutGroup>
+    <div className="grid-cinematic">
+      {recipes.map((recipe, index) => (
+        <RecipeCard key={recipe.id} recipe={recipe} index={index} />
+      ))}
+    </div>
   )
 }

@@ -22,9 +22,9 @@ export default function MealPlansPage() {
   const [credits, setCredits] = useState<Credits | null>(null)
   const [loading, setLoading] = useState(true)
 
-  const loadData = async () => {
+  const loadData = async (silent = false) => {
     try {
-      setLoading(true)
+      if (!silent) setLoading(true)
       console.log("Loading meal plans data...")
       const [userPlansData, curatedPlansData, creditsData] = await Promise.all([
         getUserMealPlans(),
@@ -48,15 +48,14 @@ export default function MealPlansPage() {
   }
 
   useEffect(() => {
-    loadData()
+    loadData(false)
   }, [])
 
-  // Reload when user changes (e.g., after sign in)
   useEffect(() => {
     if (!authLoading && user) {
-      loadData()
+      loadData(true)
     }
-  }, [user, authLoading])
+  }, [user?.uid, authLoading])
 
   return (
     <div className="min-h-screen padding-y-responsive">
@@ -78,7 +77,7 @@ export default function MealPlansPage() {
               </p>
             </div>
             {user ? (
-              <CreateMealPlanDialog onSuccess={loadData}>
+              <CreateMealPlanDialog onSuccess={() => loadData(true)}>
                 <Button size="lg" className="rounded-full w-full sm:w-auto">
                   <Plus className="mr-2 h-4 w-4" />
                   Create New Meal Plan
@@ -179,7 +178,7 @@ export default function MealPlansPage() {
                   key={plan.id}
                   plan={plan}
                   index={index}
-                  onUpdate={loadData}
+                  onUpdate={() => loadData(true)}
                 />
               ))}
             </div>
@@ -209,7 +208,7 @@ export default function MealPlansPage() {
                     key={plan.id}
                     plan={plan}
                     index={index}
-                    onUpdate={loadData}
+                    onUpdate={() => loadData(true)}
                   />
                 ))}
               </div>
@@ -233,7 +232,7 @@ export default function MealPlansPage() {
                   : "Sign in to create and manage your meal plans!"}
               </p>
               {user ? (
-                <CreateMealPlanDialog onSuccess={loadData}>
+                <CreateMealPlanDialog onSuccess={() => loadData(true)}>
                   <Button size="lg" className="rounded-full">
                     <Plus className="mr-2 h-4 w-4" />
                     Create Your First Meal Plan

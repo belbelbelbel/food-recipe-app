@@ -1,3 +1,6 @@
+export const LOGO_IMAGE = "/logo.svg"
+export const OG_IMAGE = "/og-image.svg"
+
 /** Cinematic hero — public/hero-img.jpg */
 export const HERO_IMAGE = "/hero-img.jpg"
 

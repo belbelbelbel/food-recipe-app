@@ -4,18 +4,10 @@ import { createContext, useCallback, useContext, useEffect, useState, type React
 import { useRouter } from "next/navigation"
 import { RecipeTransitionOverlay } from "./recipe-transition-overlay"
 
-interface TransitionRect {
-  top: number
-  left: number
-  width: number
-  height: number
-}
-
 export type TransitionPhase = "idle" | "expanding" | "holding" | "revealing"
 
 export interface RecipeTransitionPayload {
   recipeId: string
-  rect: TransitionRect
   imageSrc: string
   title: string
   href: string
@@ -33,15 +25,35 @@ interface MotionContextValue {
 
 const MotionContext = createContext<MotionContextValue | null>(null)
 
+function scrollToTop() {
+  window.scrollTo({ top: 0, left: 0, behavior: "instant" })
+  document.documentElement.scrollTop = 0
+  document.body.scrollTop = 0
+}
+
 export function MotionProvider({ children }: { children: ReactNode }) {
   const router = useRouter()
   const [activeTransition, setActiveTransition] = useState<RecipeTransitionPayload | null>(null)
   const [phase, setPhase] = useState<TransitionPhase>("idle")
 
+  // Lock background scroll during transition
+  useEffect(() => {
+    if (phase === "idle") {
+      document.body.style.overflow = ""
+      return
+    }
+    document.body.style.overflow = "hidden"
+    return () => {
+      document.body.style.overflow = ""
+    }
+  }, [phase])
+
   // Auto-finish reveal phase
   useEffect(() => {
     if (phase !== "revealing") return
+    scrollToTop()
     const timer = setTimeout(() => {
+      scrollToTop()
       setPhase("idle")
       setActiveTransition(null)
     }, 400)
@@ -73,7 +85,6 @@ export function MotionProvider({ children }: { children: ReactNode }) {
       const href = payload.href ?? `/recipes/${payload.recipeId}`
       setActiveTransition({
         recipeId: payload.recipeId,
-        rect: payload.rect,
         imageSrc: payload.imageSrc,
         title: payload.title,
         href,
@@ -84,9 +95,11 @@ export function MotionProvider({ children }: { children: ReactNode }) {
   )
 
   const onExpandComplete = useCallback(() => {
+    scrollToTop()
     setActiveTransition((current) => {
       if (current) {
         router.push(current.href)
+        requestAnimationFrame(scrollToTop)
       }
       return current
     })

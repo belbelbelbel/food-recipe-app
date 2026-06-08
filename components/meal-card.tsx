@@ -1,6 +1,5 @@
 "use client"
 
-import { useRef } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { motion } from "framer-motion"
@@ -16,15 +15,10 @@ interface MealCardProps {
 
 export function MealCard({ meal, index }: MealCardProps) {
   const { startTransition } = useRecipeTransition()
-  const imageRef = useRef<HTMLDivElement>(null)
-
   const handleClick = (e: React.MouseEvent) => {
     e.preventDefault()
-    if (!imageRef.current) return
-    const rect = imageRef.current.getBoundingClientRect()
     startTransition({
       recipeId: meal.recipeId,
-      rect: { top: rect.top, left: rect.left, width: rect.width, height: rect.height },
       imageSrc: meal.image || "/placeholder.svg",
       title: meal.title,
     })
@@ -43,7 +37,7 @@ export function MealCard({ meal, index }: MealCardProps) {
         className="focus-enhanced block rounded-2xl"
       >
         <div className="flex h-full flex-col overflow-hidden rounded-2xl bg-card shadow-sm transition-[transform,box-shadow] duration-300 group-hover:-translate-y-1 group-hover:shadow-md">
-          <div ref={imageRef} className="relative aspect-[4/3] overflow-hidden">
+          <div className="relative aspect-[4/3] overflow-hidden">
             <Image
               src={meal.image || "/placeholder.svg"}
               alt={meal.title}

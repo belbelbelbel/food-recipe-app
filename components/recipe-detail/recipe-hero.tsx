@@ -1,68 +1,60 @@
 "use client"
 
 import Image from "next/image"
-import { motion } from "framer-motion"
 import { Clock, ChefHat, MapPin } from "lucide-react"
 import type { RecipeDetail } from "@/lib/api"
-import { duration, easeOut } from "@/lib/motion"
+import { isRemoteRecipeImage, recipeImageSrc } from "@/lib/recipe-image"
 
 interface RecipeHeroProps {
   recipe: RecipeDetail
 }
 
 export function RecipeHero({ recipe }: RecipeHeroProps) {
+  const imageSrc = recipeImageSrc(recipe.image)
+  const isRemote = isRemoteRecipeImage(imageSrc)
+
   return (
-    <div className="relative -mx-4 mb-8 w-[calc(100%+2rem)] overflow-hidden sm:mx-0 sm:mb-10 sm:w-full">
-      <div className="relative aspect-[4/3] max-h-[58vh] sm:aspect-[21/9]">
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: duration.normal, ease: easeOut }}
-          className="absolute inset-0"
-        >
+    <header className="relative overflow-hidden bg-neutral-900">
+      <div className="relative mx-auto w-full max-w-7xl">
+        <div className="relative aspect-[4/3] w-full sm:aspect-[21/9] sm:max-h-[min(52vh,480px)]">
           <Image
-            src={recipe.image || "/placeholder.svg"}
+            src={imageSrc}
             alt={recipe.title}
             fill
-            className="object-cover"
+            className="object-cover object-center"
+            sizes="(max-width: 768px) 100vw, 1200px"
+            quality={85}
             priority
-            sizes="100vw"
-            unoptimized={(recipe.image || "").startsWith("http")}
+            unoptimized={isRemote}
           />
-        </motion.div>
+          <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-black/30" />
+        </div>
 
-        <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/15 to-transparent" />
-
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: duration.slow, ease: easeOut, delay: 0.1 }}
-          className="absolute inset-x-0 bottom-0 p-5 sm:p-8 md:p-10"
-        >
+        <div className="absolute inset-x-0 bottom-0 px-4 pb-6 sm:px-6 sm:pb-8 lg:px-8 lg:pb-10">
           <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-white/75">
             {recipe.category}
           </p>
-          <h1 className="max-w-4xl text-balance text-3xl font-semibold tracking-tight text-white sm:text-4xl md:text-5xl lg:text-6xl">
+          <h1 className="max-w-4xl text-balance font-editorial text-3xl font-medium tracking-tight text-white sm:text-4xl md:text-5xl lg:text-6xl">
             {recipe.title}
           </h1>
-          <div className="mt-4 flex flex-wrap items-center gap-3 text-sm text-white/85">
-            <span className="inline-flex items-center gap-1.5">
-              <Clock className="h-4 w-4" />
+          <ul className="mt-4 flex flex-wrap gap-2 sm:gap-3">
+            <li className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-xs text-white/90 sm:text-sm">
+              <Clock className="h-3.5 w-3.5" />
               {recipe.duration}
-            </span>
+            </li>
             {recipe.area && (
-              <span className="inline-flex items-center gap-1.5">
-                <MapPin className="h-4 w-4" />
+              <li className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-xs text-white/90 sm:text-sm">
+                <MapPin className="h-3.5 w-3.5" />
                 {recipe.area}
-              </span>
+              </li>
             )}
-            <span className="inline-flex items-center gap-1.5">
-              <ChefHat className="h-4 w-4" />
+            <li className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-xs text-white/90 sm:text-sm">
+              <ChefHat className="h-3.5 w-3.5" />
               {recipe.ingredients.length} ingredients
-            </span>
-          </div>
-        </motion.div>
+            </li>
+          </ul>
+        </div>
       </div>
-    </div>
+    </header>
   )
 }

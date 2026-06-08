@@ -4,127 +4,154 @@ import { useEffect, useRef, useState } from "react"
 import Image from "next/image"
 import { motion, AnimatePresence } from "framer-motion"
 import { useRecipeTransition } from "./motion-provider"
-import { reducedMotion } from "@/lib/motion"
+import { duration, easeOut, reducedMotion } from "@/lib/motion"
 
-const HERO_HEIGHT = "min(58vh, 520px)"
+type SheetStep = "rise" | "expand" | "hold"
 
 export function RecipeTransitionOverlay() {
   const { activeTransition, phase, onExpandComplete } = useRecipeTransition()
-  const [show, setShow] = useState(false)
+  const [sheetStep, setSheetStep] = useState<SheetStep>("rise")
   const expandFired = useRef(false)
   const prefersReduced = reducedMotion()
 
   useEffect(() => {
     expandFired.current = false
+    setSheetStep("rise")
   }, [activeTransition?.recipeId])
 
   useEffect(() => {
-    if (activeTransition && phase !== "idle") {
-      setShow(true)
-    } else if (phase === "idle") {
-      setShow(false)
-    }
-  }, [activeTransition, phase])
+    if (!prefersReduced || phase !== "expanding" || expandFired.current) return
+    expandFired.current = true
+    onExpandComplete()
+  }, [prefersReduced, phase, onExpandComplete])
 
-  if (!activeTransition || !show) return null
+  if (!activeTransition || phase === "idle") return null
+  if (prefersReduced) return null
 
-  const { rect, imageSrc, title } = activeTransition
+  const { imageSrc, title } = activeTransition
   const isRevealing = phase === "revealing"
+  const isFullscreen = sheetStep === "expand" || sheetStep === "hold" || phase === "holding"
+
+  const handleRiseComplete = () => {
+    if (phase === "expanding" && sheetStep === "rise") {
+      setSheetStep("expand")
+    }
+  }
+
+  const handleExpandComplete = () => {
+    if (phase === "expanding" && sheetStep === "expand" && !expandFired.current) {
+      expandFired.current = true
+      setSheetStep("hold")
+      onExpandComplete()
+    }
+  }
 
   return (
     <AnimatePresence>
-      {(phase === "expanding" || phase === "holding" || phase === "revealing") && (
+      <motion.div
+        key="recipe-transition"
+        className="fixed inset-0 z-[200]"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: isRevealing ? 0 : 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: isRevealing ? 0.35 : 0.2, ease: easeOut }}
+      >
         <motion.div
-          key="recipe-transition"
-          className="fixed inset-0 z-[200]"
+          className="absolute inset-0 bg-black/50 backdrop-blur-[2px]"
           initial={{ opacity: 0 }}
-          animate={{ opacity: isRevealing ? 0 : 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: prefersReduced ? 0 : isRevealing ? 0.38 : 0.2 }}
+          animate={{ opacity: isRevealing ? 0 : isFullscreen ? 0.7 : 0.4 }}
+          transition={{ duration: duration.normal, ease: easeOut }}
+        />
+
+        <motion.div
+          className="fixed left-0 right-0 flex flex-col overflow-hidden bg-background shadow-2xl"
+          initial={{
+            bottom: 0,
+            y: "100%",
+            height: "78vh",
+            borderTopLeftRadius: 28,
+            borderTopRightRadius: 28,
+          }}
+          animate={
+            isFullscreen
+              ? {
+                  bottom: 0,
+                  top: 0,
+                  y: 0,
+                  height: "100%",
+                  borderTopLeftRadius: 0,
+                  borderTopRightRadius: 0,
+                }
+              : {
+                  bottom: 0,
+                  top: "auto",
+                  y: 0,
+                  height: "78vh",
+                  borderTopLeftRadius: 28,
+                  borderTopRightRadius: 28,
+                }
+          }
+          transition={{
+            duration: isFullscreen ? 0.4 : 0.36,
+            ease: easeOut,
+          }}
+          onAnimationComplete={() => {
+            if (sheetStep === "rise") handleRiseComplete()
+            else if (sheetStep === "expand") handleExpandComplete()
+          }}
         >
-          {/* Cinematic backdrop */}
           <motion.div
-            className="absolute inset-0 bg-black"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: phase === "expanding" ? 0.55 : 0.92 }}
-            transition={{ duration: prefersReduced ? 0 : 0.35 }}
-          />
-
-          {/* Expanding image */}
-          <motion.div
-            className="absolute overflow-hidden bg-neutral-900 shadow-2xl"
-            initial={{
-              top: rect.top,
-              left: rect.left,
-              width: rect.width,
-              height: rect.height,
-              borderRadius: 24,
-            }}
-            animate={{
-              top: 0,
-              left: 0,
-              width: "100%",
-              height: HERO_HEIGHT,
-              borderRadius: 0,
-            }}
-            transition={
-              prefersReduced
-                ? { duration: 0 }
-                : {
-                    type: "spring",
-                    stiffness: 140,
-                    damping: 22,
-                    mass: 0.85,
-                  }
-            }
-            onAnimationComplete={() => {
-              if (phase === "expanding" && !expandFired.current) {
-                expandFired.current = true
-                onExpandComplete()
-              }
-            }}
+            className="flex shrink-0 justify-center overflow-hidden"
+            animate={{ height: isFullscreen ? 0 : 28, opacity: isFullscreen ? 0 : 1 }}
+            transition={{ duration: 0.2 }}
           >
-            <motion.div
-              className="relative h-full w-full"
-              initial={{ scale: 1.05 }}
-              animate={{ scale: 1 }}
-              transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-            >
-              <Image
-                src={imageSrc || "/placeholder.svg"}
-                alt={title}
-                fill
-                className="object-cover"
-                sizes="100vw"
-                priority
-                unoptimized={imageSrc.startsWith("http")}
-              />
-            </motion.div>
+            <div className="mt-3 h-1 w-10 rounded-full bg-muted-foreground/30" />
+          </motion.div>
 
-            <motion.div
-              className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.25, duration: 0.4 }}
+          <motion.div
+            className="relative w-full shrink-0 overflow-hidden bg-neutral-900"
+            animate={{ height: isFullscreen ? "min(52vh, 480px)" : 200 }}
+            transition={{ duration: 0.4, ease: easeOut }}
+          >
+            <Image
+              src={imageSrc || "/placeholder.svg"}
+              alt={title}
+              fill
+              className="object-cover"
+              sizes="100vw"
+              priority
+              unoptimized={imageSrc.startsWith("http")}
             />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+          </motion.div>
 
-            {/* Title emerges as image expands */}
-            <motion.div
-              className="absolute inset-x-0 bottom-0 p-6 sm:p-10"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: phase !== "expanding" ? 1 : 0.6, y: 0 }}
-              transition={{ delay: 0.3, duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-            >
-              <p className="mb-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-white/70">
-                Recipe
-              </p>
-              <h2 className="max-w-3xl text-2xl font-semibold tracking-tight text-white sm:text-4xl md:text-5xl">
-                {title}
-              </h2>
-            </motion.div>
+          <motion.div
+            className="flex flex-1 flex-col px-5 pb-6 pt-5 sm:px-8 sm:pb-8"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1, duration: duration.normal, ease: easeOut }}
+          >
+            <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+              Opening recipe
+            </p>
+            <h2 className="text-balance font-editorial text-2xl font-medium tracking-tight text-foreground sm:text-3xl md:text-4xl">
+              {title}
+            </h2>
+
+            {phase === "holding" && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="mt-6 space-y-3"
+              >
+                <div className="h-3 w-4/5 rounded-full shimmer" />
+                <div className="h-3 w-3/5 rounded-full shimmer" />
+                <div className="h-3 w-2/5 rounded-full shimmer" />
+              </motion.div>
+            )}
           </motion.div>
         </motion.div>
-      )}
+      </motion.div>
     </AnimatePresence>
   )
 }

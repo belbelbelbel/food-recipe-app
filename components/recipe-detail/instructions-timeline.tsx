@@ -1,8 +1,3 @@
-"use client"
-
-import { motion } from "framer-motion"
-import { duration, easeOut } from "@/lib/motion"
-
 interface InstructionsTimelineProps {
   instructions: string[]
 }
@@ -10,22 +5,25 @@ interface InstructionsTimelineProps {
 export function InstructionsTimeline({ instructions }: InstructionsTimelineProps) {
   return (
     <section id="instructions-section">
-      <h2 className="mb-5 text-xl font-semibold sm:text-2xl">Instructions</h2>
-      <ol className="space-y-5 sm:space-y-6">
+      <h2 className="font-editorial mb-6 text-2xl font-medium tracking-tight sm:text-3xl">
+        Instructions
+      </h2>
+      <ol className="relative space-y-0">
         {instructions.map((instruction, index) => (
-          <motion.li
-            key={index}
-            initial={{ opacity: 0, y: 10 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-20px" }}
-            transition={{ duration: duration.normal, ease: easeOut }}
-            className="flex gap-4"
-          >
-            <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground sm:h-9 sm:w-9">
+          <li key={index} className="relative flex gap-4 pb-8 last:pb-0">
+            {index < instructions.length - 1 && (
+              <span
+                className="absolute left-4 top-9 bottom-0 w-px -translate-x-1/2 bg-border"
+                aria-hidden
+              />
+            )}
+            <span className="relative z-[1] flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground sm:h-9 sm:w-9">
               {index + 1}
             </span>
-            <p className="pt-1 text-sm leading-relaxed text-pretty sm:text-base">{instruction}</p>
-          </motion.li>
+            <p className="pt-1 text-sm leading-relaxed text-pretty text-foreground sm:text-base sm:leading-7">
+              {instruction}
+            </p>
+          </li>
         ))}
       </ol>
     </section>

@@ -1,16 +1,12 @@
 "use client"
 
-import { useState, useRef, useCallback } from "react"
+import { useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
-import { motion } from "framer-motion"
 import { ArrowRight, Clock } from "lucide-react"
-import type { Recipe, RecipeDetail } from "@/lib/api"
-import { AddToMealPlanButton } from "./add-to-meal-plan-button"
-import { SaveMealButton } from "./save-meal-button"
-import { fetchRecipeById } from "@/lib/api"
+import type { Recipe } from "@/lib/api"
 import { useRecipeTransition } from "@/components/motion/motion-provider"
-import { duration, easeOut } from "@/lib/motion"
+import { recipeImageSrc } from "@/lib/recipe-image"
 
 interface RecipeCardProps {
   recipe: Recipe
@@ -19,96 +15,44 @@ interface RecipeCardProps {
 
 export function RecipeCard({ recipe, index }: RecipeCardProps) {
   const { startTransition, activeTransition } = useRecipeTransition()
-  const imageRef = useRef<HTMLDivElement>(null)
   const [imageLoaded, setImageLoaded] = useState(false)
-  const [recipeDetail, setRecipeDetail] = useState<RecipeDetail | null>(null)
-  const [fetchStarted, setFetchStarted] = useState(false)
 
-  const isFlying =
-    activeTransition?.recipeId === recipe.id && activeTransition !== null
-
-  const imageSrc =
-    recipe.image && recipe.image.trim() !== "" && recipe.image !== "null"
-      ? recipe.image
-      : "/placeholder.svg"
-
-  const loadDetailsOnHover = useCallback(async () => {
-    if (fetchStarted) return
-    setFetchStarted(true)
-    try {
-      const detail = await fetchRecipeById(recipe.id)
-      setRecipeDetail(detail)
-    } catch (error) {
-      console.error("Failed to load recipe details:", error)
-    }
-  }, [recipe.id, fetchStarted])
+  const isOpening = activeTransition?.recipeId === recipe.id
+  const imageSrc = recipeImageSrc(recipe.image)
 
   const handleClick = (e: React.MouseEvent) => {
     e.preventDefault()
-    if (!imageRef.current) return
-
-    const rect = imageRef.current.getBoundingClientRect()
     startTransition({
       recipeId: recipe.id,
-      rect: {
-        top: rect.top,
-        left: rect.left,
-        width: rect.width,
-        height: rect.height,
-      },
       imageSrc,
       title: recipe.title,
     })
   }
 
   return (
-    <motion.article
-      layout
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{
-        layout: { duration: 0.45, ease: easeOut },
-        opacity: { duration: duration.normal },
-      }}
-      onMouseEnter={loadDetailsOnHover}
-      className="group w-full"
-    >
+    <article className="group w-full">
       <Link
         href={`/recipes/${recipe.id}`}
         onClick={handleClick}
         className="focus-enhanced block"
       >
         <div
-          ref={imageRef}
-          className="relative mb-4 aspect-square overflow-hidden rounded-3xl bg-[#f4f1ec] shadow-sm transition-shadow duration-500 ease-out group-hover:shadow-xl"
+          className={`relative mb-4 aspect-square overflow-hidden rounded-3xl bg-[#f4f1ec] shadow-sm transition-[opacity,shadow] duration-300 ease-out group-hover:shadow-xl ${
+            isOpening ? "opacity-0" : "opacity-100"
+          }`}
         >
-          {!imageLoaded && !isFlying && <div className="absolute inset-0 shimmer" />}
-          <motion.div
-            animate={{ opacity: isFlying ? 0 : imageLoaded ? 1 : 0 }}
-            transition={{ duration: 0.15 }}
-            className="absolute inset-0"
-          >
-            <Image
-              src={imageSrc}
-              alt={recipe.title || "Recipe"}
-              fill
-              sizes="(max-width: 768px) 100vw, 33vw"
-              className="object-cover transition-transform duration-[900ms] ease-out group-hover:scale-110"
-              priority={index < 3}
-              loading={index < 3 ? "eager" : "lazy"}
-              onLoad={() => setImageLoaded(true)}
-              quality={90}
-            />
-          </motion.div>
-
-          <div
-            className="absolute right-3 top-3 z-10 flex gap-1.5 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <AddToMealPlanButton recipe={recipe} variant="icon" />
-            {recipeDetail && <SaveMealButton recipe={recipeDetail} variant="icon" />}
-          </div>
+          {!imageLoaded && !isOpening && <div className="absolute inset-0 shimmer" />}
+          <Image
+            src={imageSrc}
+            alt={recipe.title || "Recipe"}
+            fill
+            sizes="(max-width: 768px) 100vw, 33vw"
+            className={`object-cover ${imageLoaded && !isOpening ? "opacity-100" : "opacity-0"}`}
+            priority={index < 3}
+            loading={index < 3 ? "eager" : "lazy"}
+            onLoad={() => setImageLoaded(true)}
+            quality={80}
+          />
         </div>
 
         <div className="space-y-2 px-1">
@@ -127,6 +71,6 @@ export function RecipeCard({ recipe, index }: RecipeCardProps) {
           </div>
         </div>
       </Link>
-    </motion.article>
+    </article>
   )
 }

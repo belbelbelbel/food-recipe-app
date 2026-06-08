@@ -1,3 +1,5 @@
+import { recipeImageSrc } from "./recipe-image"
+
 const BASE_URL = "https://api.myrecipeapp.com"
 const THEMEALDB_BASE_URL = "https://www.themealdb.com/api/json/v1/1"
 
@@ -409,7 +411,7 @@ function transformMealDBMeal(meal: TheMealDBMeal): Recipe {
   return {
     id: meal.idMeal,
     title: meal.strMeal,
-    image: meal.strMealThumb || "/placeholder.svg",
+    image: recipeImageSrc(meal.strMealThumb),
     category: meal.strCategory || "Unknown",
     duration: "30 min", // TheMealDB doesn't provide duration, using default
   }
@@ -478,11 +480,14 @@ export async function searchRecipes(query: string): Promise<Recipe[]> {
   }
 }
 
-// Get random recipes from TheMealDB
-export async function fetchRandomRecipes(count: number = 10): Promise<Recipe[]> {
+let recipesCache: { data: Recipe[]; ts: number } | null = null
+const RECIPES_CACHE_MS = 2 * 60 * 1000
+
+// Get random recipes from TheMealDB (batched — fewer parallel calls)
+export async function fetchRandomRecipes(count: number = 6): Promise<Recipe[]> {
   try {
     const promises = Array.from({ length: count }, () =>
-      fetch(`${THEMEALDB_BASE_URL}/random.php`, { cache: "no-store" })
+      fetch(`${THEMEALDB_BASE_URL}/random.php`, { next: { revalidate: 120 } })
     )
 
     const responses = await Promise.all(promises)
@@ -524,7 +529,7 @@ export async function fetchRecipesByCategory(category: string): Promise<Recipe[]
   try {
     const response = await fetch(
       `${THEMEALDB_BASE_URL}/filter.php?c=${encodeURIComponent(category)}`,
-      { cache: "no-store" }
+      { next: { revalidate: 300 } }
     )
     
     if (!response.ok) {
@@ -543,7 +548,7 @@ export async function fetchRecipesByCategory(category: string): Promise<Recipe[]
       .map((meal: any) => ({
         id: meal.idMeal,
         title: meal.strMeal,
-        image: meal.strMealThumb || "/placeholder.svg",
+        image: recipeImageSrc(meal.strMealThumb),
         category: category,
         duration: "30 min",
       }))
@@ -579,11 +584,15 @@ export async function fetchCategories(): Promise<string[]> {
 
 // Main fetch function - now uses TheMealDB
 export async function fetchRecipes(): Promise<Recipe[]> {
+  if (recipesCache && Date.now() - recipesCache.ts < RECIPES_CACHE_MS) {
+    return recipesCache.data
+  }
+
   try {
-    // Try to fetch random recipes from TheMealDB
-    const recipes = await fetchRandomRecipes(12)
-    
+    const recipes = await fetchRandomRecipes(6)
+
     if (recipes.length > 0) {
+      recipesCache = { data: recipes, ts: Date.now() }
       return recipes
     }
     

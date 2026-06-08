@@ -1,20 +1,23 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { motion, useSpring } from "framer-motion"
+import { useEffect, useRef } from "react"
 
 export function ReadingProgress() {
-  const [progress, setProgress] = useState(0)
-  const scaleX = useSpring(0, { stiffness: 300, damping: 30 })
+  const barRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    scaleX.set(progress)
-  }, [progress, scaleX])
+    const bar = barRef.current
+    if (!bar) return
 
-  useEffect(() => {
-    function handleScroll() {
+    let ticking = false
+
+    const update = () => {
       const section = document.getElementById("instructions-section")
-      if (!section) return
+      if (!section) {
+        bar.style.transform = "scaleX(0)"
+        ticking = false
+        return
+      }
 
       const rect = section.getBoundingClientRect()
       const sectionTop = rect.top + window.scrollY
@@ -25,19 +28,33 @@ export function ReadingProgress() {
       const start = sectionTop - windowHeight * 0.5
       const end = sectionTop + sectionHeight - windowHeight * 0.25
       const raw = (scrollY - start) / (end - start)
-      setProgress(Math.min(1, Math.max(0, raw)))
+      const progress = Math.min(1, Math.max(0, raw))
+
+      bar.style.transform = `scaleX(${progress})`
+      ticking = false
     }
 
-    window.addEventListener("scroll", handleScroll, { passive: true })
-    handleScroll()
-    return () => window.removeEventListener("scroll", handleScroll)
+    const onScroll = () => {
+      if (!ticking) {
+        ticking = true
+        requestAnimationFrame(update)
+      }
+    }
+
+    update()
+    window.addEventListener("scroll", onScroll, { passive: true })
+    return () => window.removeEventListener("scroll", onScroll)
   }, [])
 
   return (
-    <div className="fixed left-0 right-0 top-14 z-40 h-px bg-border sm:top-16">
-      <motion.div
-        className="h-full origin-left bg-primary"
-        style={{ scaleX }}
+    <div
+      className="pointer-events-none fixed left-0 right-0 top-14 z-40 h-0.5 bg-border/60 sm:top-16"
+      aria-hidden
+    >
+      <div
+        ref={barRef}
+        className="h-full origin-left bg-primary will-change-transform"
+        style={{ transform: "scaleX(0)" }}
       />
     </div>
   )
