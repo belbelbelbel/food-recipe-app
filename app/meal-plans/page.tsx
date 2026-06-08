@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import Link from "next/link"
 import { motion } from "framer-motion"
 import { AlertCircle, Plus, LogIn } from "lucide-react"
 import { fetchMealPlans, fetchCredits, type MealPlan, type Credits } from "@/lib/api"
@@ -67,8 +66,8 @@ export default function MealPlansPage() {
           transition={{ duration: 0.6 }}
           className="mb-8 sm:mb-12 lg:mb-16"
         >
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4 sm:mb-6">
-            <div>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
+            <div className="min-w-0 flex-1">
               <h1 className="text-responsive-hero text-balance mb-2 sm:mb-4">
                 My <span className="text-primary">Meal Plans</span>
               </h1>
@@ -76,22 +75,13 @@ export default function MealPlansPage() {
                 Create and manage your meal plans. Add recipes to build your perfect weekly menu.
               </p>
             </div>
-            {user ? (
+            {user && (
               <CreateMealPlanDialog onSuccess={() => loadData(true)}>
-                <Button size="lg" className="rounded-full w-full sm:w-auto">
+                <Button size="lg" className="w-full shrink-0 rounded-full sm:w-auto">
                   <Plus className="mr-2 h-4 w-4" />
                   Create New Meal Plan
                 </Button>
               </CreateMealPlanDialog>
-            ) : (
-              <Button 
-                size="lg" 
-                className="rounded-full w-full sm:w-auto"
-                onClick={() => router.push("/login")}
-              >
-                <LogIn className="mr-2 h-4 w-4" />
-                Sign In to Create Plans
-              </Button>
             )}
           </div>
         </motion.div>
@@ -104,25 +94,41 @@ export default function MealPlansPage() {
             transition={{ duration: 0.6, delay: 0.2 }}
             className="mb-6 sm:mb-8 lg:mb-12"
           >
-            <Alert className="border-primary/20 bg-primary/5 p-4 sm:p-6">
-              <LogIn className="h-4 w-4 sm:h-5 sm:w-5 text-primary flex-shrink-0" />
-              <div className="ml-2 sm:ml-3">
-                <AlertTitle className="text-primary text-sm sm:text-base font-semibold">
-                  Sign In Required
-                </AlertTitle>
-                <AlertDescription className="text-xs sm:text-sm mt-1">
-                  You need to be signed in to create and manage meal plans.{" "}
-                  <Link href="/login" className="font-semibold underline hover:no-underline">
-                    Sign in
-                  </Link>{" "}
-                  or{" "}
-                  <Link href="/signup" className="font-semibold underline hover:no-underline">
-                    create an account
-                  </Link>{" "}
-                  to get started!
-                </AlertDescription>
+            <div className="rounded-2xl border border-primary/20 bg-primary/5 p-5 sm:p-6 lg:p-8">
+              <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between sm:gap-8">
+                <div className="flex items-start gap-4">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary/10 sm:h-12 sm:w-12">
+                    <LogIn className="h-5 w-5 text-primary" />
+                  </div>
+                  <div className="min-w-0 pt-0.5">
+                    <h2 className="text-base font-semibold text-primary sm:text-lg">
+                      Sign in to create meal plans
+                    </h2>
+                    <p className="mt-1 text-sm text-muted-foreground text-pretty sm:text-base">
+                      You need an account to create and manage your weekly meal plans.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex flex-col gap-3 sm:flex-row sm:shrink-0">
+                  <Button
+                    size="lg"
+                    className="w-full rounded-full sm:w-auto"
+                    onClick={() => router.push("/login")}
+                  >
+                    <LogIn className="mr-2 h-4 w-4" />
+                    Sign In
+                  </Button>
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="w-full rounded-full sm:w-auto"
+                    onClick={() => router.push("/signup")}
+                  >
+                    Create Account
+                  </Button>
+                </div>
               </div>
-            </Alert>
+            </div>
           </motion.div>
         )}
 
@@ -135,29 +141,25 @@ export default function MealPlansPage() {
             className="mb-6 sm:mb-8 lg:mb-12"
           >
             {credits.creditsLeft > 0 ? (
-              <Alert className="border-primary/20 bg-primary/5 p-4 sm:p-6 hidden">
-                <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5 text-primary flex-shrink-0" />
-                <div className="ml-2 sm:ml-3">
-                  <AlertTitle className="text-primary text-sm sm:text-base font-semibold">
-                    Credits Available
-                  </AlertTitle>
-                  <AlertDescription className="text-xs sm:text-sm mt-1">
-                    You have <strong>{credits.creditsLeft}</strong> free meal plan{credits.creditsLeft !== 1 ? "s" : ""}{" "}
-                    remaining. Start planning your delicious week!
-                  </AlertDescription>
-                </div>
+              <Alert className="hidden border-primary/20 bg-primary/5 p-4 sm:p-6">
+                <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+                <AlertTitle className="text-primary text-sm sm:text-base font-semibold">
+                  Credits Available
+                </AlertTitle>
+                <AlertDescription className="text-xs sm:text-sm">
+                  You have <strong>{credits.creditsLeft}</strong> free meal plan{credits.creditsLeft !== 1 ? "s" : ""}{" "}
+                  remaining. Start planning your delicious week!
+                </AlertDescription>
               </Alert>
             ) : (
               <Alert variant="destructive" className="border-destructive/20 bg-destructive/5 p-4 sm:p-6">
-                <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
-                <div className="ml-2 sm:ml-3">
-                  <AlertTitle className="text-sm sm:text-base font-semibold">
-                    No Credits Remaining
-                  </AlertTitle>
-                  <AlertDescription className="text-xs sm:text-sm mt-1">
-                    You've used all your free meal plans. Here's a sample plan to explore and get inspired!
-                  </AlertDescription>
-                </div>
+                <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5" />
+                <AlertTitle className="text-sm sm:text-base font-semibold">
+                  No Credits Remaining
+                </AlertTitle>
+                <AlertDescription className="text-xs sm:text-sm">
+                  You&apos;ve used all your free meal plans. Here&apos;s a sample plan to explore and get inspired!
+                </AlertDescription>
               </Alert>
             )}
           </motion.div>
@@ -231,23 +233,13 @@ export default function MealPlansPage() {
                   ? "Create your first meal plan to start organizing your weekly meals!"
                   : "Sign in to create and manage your meal plans!"}
               </p>
-              {user ? (
+              {user && (
                 <CreateMealPlanDialog onSuccess={() => loadData(true)}>
                   <Button size="lg" className="rounded-full">
                     <Plus className="mr-2 h-4 w-4" />
                     Create Your First Meal Plan
                   </Button>
                 </CreateMealPlanDialog>
-              ) : (
-                <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                  <Button size="lg" className="rounded-full" onClick={() => router.push("/login")}>
-                    <LogIn className="mr-2 h-4 w-4" />
-                    Sign In
-                  </Button>
-                  <Button size="lg" variant="outline" className="rounded-full" onClick={() => router.push("/signup")}>
-                    Sign Up
-                  </Button>
-                </div>
               )}
             </div>
           </motion.div>
